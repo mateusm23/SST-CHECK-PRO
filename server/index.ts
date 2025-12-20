@@ -105,9 +105,10 @@ async function initStripe() {
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       },
+      limit: '50mb',
     }),
   );
-  app.use(express.urlencoded({ extended: false }));
+  app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
   await setupAuth(app);
   registerAuthRoutes(app);
