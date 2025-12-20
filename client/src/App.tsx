@@ -10,6 +10,7 @@ import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
 import PricingPage from "@/pages/pricing";
 import InspectionPage from "@/pages/inspection";
+import InspectionViewPage from "@/pages/inspection-view";
 
 function AuthenticatedRoutes() {
   return (
@@ -17,6 +18,7 @@ function AuthenticatedRoutes() {
       <Route path="/" component={DashboardPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/pricing" component={PricingPage} />
+      <Route path="/inspection/:id/view" component={InspectionViewPage} />
       <Route path="/inspection/:id" component={InspectionPage} />
       <Route component={NotFound} />
     </Switch>
