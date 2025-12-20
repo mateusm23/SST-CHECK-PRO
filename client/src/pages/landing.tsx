@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Camera, Smartphone, Mail, MapPin, BarChart3, ClipboardList, FileText, HardHat, Shield, AlertTriangle, Lock, Loader2, X } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 
 const features = [
   {
@@ -154,18 +155,20 @@ export default function LandingPage() {
               NRs Atendidas
             </a>
             <a
-              href="/api/login"
-              className="bg-[#FFD100] text-[#1A1D23] px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-[#E6BC00] transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#FFD100]/30"
+              href="/api/auth/google"
+              className="inline-flex items-center gap-2 bg-white text-[#1A1D23] px-5 py-2.5 rounded font-bold tracking-wide hover:bg-gray-100 transition-all hover:-translate-y-0.5"
               data-testid="button-nav-cta"
             >
-              Teste Grátis
+              <SiGoogle className="w-4 h-4 text-[#4285F4]" />
+              Entrar
             </a>
           </div>
           <a
-            href="/api/login"
-            className="md:hidden bg-[#FFD100] text-[#1A1D23] px-4 py-2 rounded font-bold text-sm uppercase"
+            href="/api/auth/google"
+            className="md:hidden inline-flex items-center gap-2 bg-white text-[#1A1D23] px-4 py-2 rounded font-bold text-sm"
             data-testid="button-mobile-cta"
           >
+            <SiGoogle className="w-4 h-4 text-[#4285F4]" />
             Entrar
           </a>
         </div>
@@ -193,12 +196,12 @@ export default function LandingPage() {
             
             <div className="flex flex-wrap gap-4 mb-12">
               <a
-                href="/api/login"
-                className="inline-flex items-center gap-2 bg-[#FFD100] text-[#1A1D23] px-7 py-4 rounded font-bold uppercase tracking-wide hover:bg-[#E6BC00] transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#FFD100]/30"
+                href="/api/auth/google"
+                className="inline-flex items-center gap-3 bg-white text-[#1A1D23] px-7 py-4 rounded font-bold tracking-wide hover:bg-gray-100 transition-all hover:-translate-y-0.5 hover:shadow-lg"
                 data-testid="button-hero-primary"
               >
-                <Smartphone className="w-5 h-5" />
-                Começar Grátis
+                <SiGoogle className="w-5 h-5 text-[#4285F4]" />
+                Entrar com Google
               </a>
               <a
                 href="#como-funciona"
