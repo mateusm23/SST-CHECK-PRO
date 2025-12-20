@@ -13,7 +13,7 @@ async function seedStripeProducts() {
       slug: "professional",
       name: "SST Check Pro - Profissional",
       description: "30 inspeções por mês, todos os checklists de NRs, upload de logo, planos de ação com IA",
-      price: 900,
+      price: 2990,
       currency: "brl",
       interval: "month" as const,
     },
