@@ -16,7 +16,8 @@ import {
   ChevronRight,
   AlertTriangle,
   X,
-  Eye
+  Eye,
+  Trash2
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   const { data: subscription, isLoading: subLoading } = useQuery({
     queryKey: ["/api/subscription"],
@@ -70,6 +72,29 @@ export default function DashboardPage() {
       if (data.url) {
         window.location.href = data.url;
       }
+    },
+  });
+
+  const deleteInspectionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/inspections/${id}`, {});
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+      setDeleteConfirm(null);
+      toast({
+        title: "Sucesso",
+        description: "Inspeção deletada com sucesso",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível deletar a inspeção",
+        variant: "destructive",
+      });
     },
   });
 
@@ -314,40 +339,84 @@ export default function DashboardPage() {
               {allInspections.map((inspection: any) => {
                 const isCompleted = inspection.status === "completed";
                 return (
-                  <Link
-                    key={inspection.id}
-                    href={isCompleted ? `/inspection/${inspection.id}/view` : `/inspection/${inspection.id}`}
-                    className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                    data-testid={`link-inspection-${inspection.id}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        isCompleted ? "bg-green-100" : "bg-orange-100"
-                      }`}>
-                        {isCompleted ? (
-                          <Eye className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <Edit3 className="w-5 h-5 text-orange-600" />
-                        )}
+                  <div key={inspection.id}>
+                    <Link
+                      href={isCompleted ? `/inspection/${inspection.id}/view` : `/inspection/${inspection.id}`}
+                      className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                      data-testid={`link-inspection-${inspection.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isCompleted ? "bg-green-100" : "bg-orange-100"
+                        }`}>
+                          {isCompleted ? (
+                            <Eye className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <Edit3 className="w-5 h-5 text-orange-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{inspection.title || "Inspeção"}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(inspection.createdAt).toLocaleDateString("pt-BR")}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{inspection.title || "Inspeção"}</p>
-                        <p className="text-sm text-gray-500">
-                          {new Date(inspection.createdAt).toLocaleDateString("pt-BR")}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          isCompleted 
+                            ? "bg-green-100 text-green-700" 
+                            : "bg-orange-100 text-orange-700"
+                        }`}>
+                          {isCompleted ? "Finalizada" : "Rascunho"}
+                        </span>
+                        <ChevronRight className="w-5 h-5 text-gray-400" />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        isCompleted 
-                          ? "bg-green-100 text-green-700" 
-                          : "bg-orange-100 text-orange-700"
-                      }`}>
-                        {isCompleted ? "Finalizada" : "Rascunho"}
-                      </span>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </div>
-                  </Link>
+                    </Link>
+
+                    {/* Delete Confirmation */}
+                    {deleteConfirm === inspection.id && (
+                      <div className="bg-red-50 border-t border-red-200 px-4 py-3 flex items-center justify-between">
+                        <span className="text-sm text-red-700 font-medium">Deseja deletar esta inspeção?</span>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setDeleteConfirm(null)}
+                            className="text-gray-600 hover:text-gray-900"
+                            data-testid={`button-cancel-delete-${inspection.id}`}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-red-500 text-white hover:bg-red-600"
+                            onClick={() => deleteInspectionMutation.mutate(inspection.id)}
+                            disabled={deleteInspectionMutation.isPending}
+                            data-testid={`button-confirm-delete-${inspection.id}`}
+                          >
+                            {deleteInspectionMutation.isPending ? "Deletando..." : "Deletar"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delete Button (visible when not confirming) */}
+                    {deleteConfirm !== inspection.id && (
+                      <div className="bg-gray-50 border-t border-gray-100 px-4 py-2 flex justify-end">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setDeleteConfirm(inspection.id)}
+                          data-testid={`button-delete-${inspection.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Deletar
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
