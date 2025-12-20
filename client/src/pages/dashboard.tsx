@@ -158,7 +158,7 @@ export default function DashboardPage() {
                 <Crown className="w-5 h-5 text-[#FFD100]" />
                 <span className="font-bold text-gray-900">Plano Profissional</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900 mb-1">R$ 49,90<span className="text-sm font-normal text-gray-500">/mês</span></p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">R$ 9,00<span className="text-sm font-normal text-gray-500">/mês</span></p>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• 30 inspeções por mês</li>
                 <li>• Planos de ação com IA</li>
