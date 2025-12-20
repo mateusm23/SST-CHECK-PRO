@@ -9,6 +9,11 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { subscriptionPlans } from "@shared/schema";
 import { db } from "./db";
 
+// VIP emails with full unlimited access
+const VIP_EMAILS = [
+  "mateusnunesmonteiro@gmail.com",
+];
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -17,6 +22,29 @@ export async function registerRoutes(
   app.get(api.subscription.current.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const userEmail = req.user.email || req.user.claims?.email;
+      
+      // Check if user is VIP (full unlimited access)
+      const isVIP = VIP_EMAILS.includes(userEmail?.toLowerCase());
+      
+      if (isVIP) {
+        // VIP users get unlimited business plan access
+        return res.json({
+          plan: {
+            id: 999,
+            name: "VIP Business",
+            slug: "business",
+            monthlyLimit: -1,
+            canUploadLogo: true,
+          },
+          usage: {
+            inspectionsThisMonth: 0,
+            remaining: -1,
+          },
+          isVIP: true,
+        });
+      }
+      
       let userSub = await storage.getUserSubscription(userId);
       
       if (!userSub) {
@@ -187,28 +215,34 @@ export async function registerRoutes(
   app.post(api.inspections.create.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const userEmail = req.user.email || req.user.claims?.email;
       
-      let userSub = await storage.getUserSubscription(userId);
-      if (!userSub) {
-        const freePlan = await storage.getSubscriptionPlanBySlug("free");
-        if (freePlan) {
-          userSub = await storage.createUserSubscription({
-            userId,
-            planId: freePlan.id,
-            status: "active",
-          });
+      // VIP users bypass all limits
+      const isVIP = VIP_EMAILS.includes(userEmail?.toLowerCase());
+      
+      if (!isVIP) {
+        let userSub = await storage.getUserSubscription(userId);
+        if (!userSub) {
+          const freePlan = await storage.getSubscriptionPlanBySlug("free");
+          if (freePlan) {
+            userSub = await storage.createUserSubscription({
+              userId,
+              planId: freePlan.id,
+              status: "active",
+            });
+          }
         }
-      }
 
-      const plans = await storage.getSubscriptionPlans();
-      const currentPlan = plans.find(p => p.id === userSub?.planId);
-      
-      if (currentPlan && currentPlan.monthlyLimit !== -1) {
-        const count = await storage.getInspectionsCountThisMonth(userId);
-        if (count >= currentPlan.monthlyLimit) {
-          return res.status(403).json({ 
-            message: `Limite de ${currentPlan.monthlyLimit} inspeções/mês atingido. Faça upgrade do seu plano.` 
-          });
+        const plans = await storage.getSubscriptionPlans();
+        const currentPlan = plans.find(p => p.id === userSub?.planId);
+        
+        if (currentPlan && currentPlan.monthlyLimit !== -1) {
+          const count = await storage.getInspectionsCountThisMonth(userId);
+          if (count >= currentPlan.monthlyLimit) {
+            return res.status(403).json({ 
+              message: `Limite de ${currentPlan.monthlyLimit} inspeções/mês atingido. Faça upgrade do seu plano.` 
+            });
+          }
         }
       }
 
