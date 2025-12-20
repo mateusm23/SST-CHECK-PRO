@@ -442,7 +442,7 @@ export default function InspectionPage() {
                         </button>
                       </div>
 
-                      {/* Extras: Observation & Photo */}
+                      {/* Extras: Observation (always visible) */}
                       <div className="pt-3 border-t border-dashed border-gray-200">
                         <input
                           type="text"
@@ -453,42 +453,44 @@ export default function InspectionPage() {
                           data-testid={`input-obs-${globalIndex}`}
                         />
 
-                        {/* Photo Upload */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <label
-                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-all ${
-                              (itemResponse?.photos?.length || 0) > 0
-                                ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
-                                : "bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 hover:border-gray-400"
-                            }`}
-                          >
-                            <Camera className="w-4 h-4" />
-                            {(itemResponse?.photos?.length || 0) > 0 ? `${itemResponse.photos.length} foto(s)` : "Adicionar Foto"}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              multiple
-                              className="hidden"
-                              onChange={(e) => handlePhotoUpload(globalIndex, e.target.files)}
-                              data-testid={`input-photo-${globalIndex}`}
-                            />
-                          </label>
+                        {/* Photo Upload - Only visible for NC */}
+                        {currentResponse === "nc" && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <label
+                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-all ${
+                                (itemResponse?.photos?.length || 0) > 0
+                                  ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
+                                  : "bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 hover:border-gray-400"
+                              }`}
+                            >
+                              <Camera className="w-4 h-4" />
+                              {(itemResponse?.photos?.length || 0) > 0 ? `${itemResponse.photos.length} foto(s)` : "Adicionar Foto"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => handlePhotoUpload(globalIndex, e.target.files)}
+                                data-testid={`input-photo-${globalIndex}`}
+                              />
+                            </label>
 
-                          {/* Photo Previews */}
-                          {itemResponse?.photos?.map((photo, photoIndex) => (
-                            <div key={photoIndex} className="relative w-14 h-14 rounded-lg overflow-hidden">
-                              <img src={photo} alt="" className="w-full h-full object-cover" />
-                              <button
-                                onClick={() => handleRemovePhoto(globalIndex, photoIndex)}
-                                className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
-                                data-testid={`btn-remove-photo-${globalIndex}-${photoIndex}`}
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+                            {/* Photo Previews */}
+                            {itemResponse?.photos?.map((photo, photoIndex) => (
+                              <div key={photoIndex} className="relative w-14 h-14 rounded-lg overflow-hidden">
+                                <img src={photo} alt="" className="w-full h-full object-cover" />
+                                <button
+                                  onClick={() => handleRemovePhoto(globalIndex, photoIndex)}
+                                  className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                                  data-testid={`btn-remove-photo-${globalIndex}-${photoIndex}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {/* Action Plan (only for NC) */}
