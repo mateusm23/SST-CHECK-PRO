@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SST Check Pro - Checklist de Segurança</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .header { background: #1a1d23; color: white; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .header h1 { color: #FFD100; font-size: 1.3rem; }
+        .container { max-width: 600px; margin: 0 auto; padding: 1rem; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .btn { display: block; width: 100%; padding: 1rem; margin: 0.5rem 0; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .btn-yellow { background: #FFD100; color: #1a1d23; }
+        .btn-green { background: #22c55e; color: white; }
+        .btn-red { background: #ef4444; color: white; }
+        .btn-gray { background: #6b7280; color: white; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn:disabled { background: #ccc; color: #666; cursor: not-allowed; }
+        .hidden { display: none; }
+        
+        /* Items do checklist */
+        .item { padding: 1rem; border-bottom: 1px solid #eee; }
+        .item:last-child { border-bottom: none; }
+        .item-question { font-weight: 500; margin-bottom: 0.75rem; line-height: 1.4; }
+        .item-buttons { display: flex; gap: 0.5rem; }
+        .item-buttons button { flex: 1; padding: 0.6rem; border: 2px solid #ddd; border-radius: 6px; background: white; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        .item-buttons button.selected-ok { background: #22c55e; color: white; border-color: #22c55e; }
+        .item-buttons button.selected-nc { background: #ef4444; color: white; border-color: #ef4444; }
+        .item-buttons button.selected-na { background: #6b7280; color: white; border-color: #6b7280; }
+        
+        /* Área de observação e foto */
+        .item-extras { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #eee; }
+        .item-obs { margin-bottom: 0.5rem; }
+        .item-obs input { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
+        
+        /* Botão de foto */
+        .foto-section { margin-top: 0.5rem; }
+        .foto-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f3f4f6; border: 2px dashed #d1d5db; border-radius: 8px; cursor: pointer; font-size: 0.85rem; color: #4b5563; transition: all 0.2s; }
+        .foto-btn:hover { background: #e5e7eb; border-color: #9ca3af; }
+        .foto-btn.has-photo { background: #dbeafe; border-color: #3b82f6; border-style: solid; color: #1d4ed8; }
+        .foto-input { display: none; }
+        .foto-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .foto-thumb { position: relative; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; }
+        .foto-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-thumb-remove { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
+        
+        /* Plano de ação */
+        .plano-acao { margin-top: 0.75rem; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca; }
+        .plano-acao-title { font-size: 0.8rem; font-weight: bold; color: #dc2626; margin-bottom: 0.5rem; }
+        .plano-acao-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .plano-acao-grid.full { grid-template-columns: 1fr; }
+        .plano-acao input, .plano-acao select { width: 100%; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; }
+        .plano-acao label { font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.2rem; }
+        
+        /* Progress */
+        .progress { background: #ddd; height: 10px; border-radius: 5px; margin: 1rem 0; overflow: hidden; }
+        .progress-bar { background: linear-gradient(90deg, #FFD100, #f59e0b); height: 100%; border-radius: 5px; transition: width 0.3s; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center; margin: 1rem 0; }
+        .stat { padding: 0.75rem; border-radius: 8px; }
+        .stat-ok { background: #dcfce7; color: #16a34a; }
+        .stat-nc { background: #fee2e2; color: #dc2626; }
+        .stat-na { background: #f3f4f6; color: #6b7280; }
+        .stat-value { font-size: 1.8rem; font-weight: bold; }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; }
+        
+        /* Forms */
+        input, textarea, select { width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; margin-bottom: 0.75rem; font-family: inherit; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #FFD100; }
+        label { display: block; font-weight: 600; margin-bottom: 0.25rem; color: #333; }
+        
+        /* ESTILOS DO RELATÓRIO PDF */
+        .pdf-container { background: white; max-width: 800px; margin: 0 auto; }
+        .pdf-header { background: linear-gradient(135deg, #1a1d23 0%, #2d3139 100%); color: white; padding: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .pdf-logo { display: flex; align-items: center; gap: 1rem; }
+        .pdf-logo-icon { width: 50px; height: 50px; background: #FFD100; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: #1a1d23; }
+        .pdf-logo-text { font-size: 1.5rem; font-weight: bold; }
+        .pdf-logo-text span { color: #FFD100; }
+        .pdf-numero { text-align: right; }
+        .pdf-numero-label { font-size: 0.8rem; opacity: 0.7; }
+        .pdf-numero-value { font-size: 1.8rem; font-weight: bold; color: #FFD100; }
+        
+        .pdf-titulo { background: #FFD100; color: #1a1d23; padding: 1rem 2rem; font-size: 1.1rem; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .pdf-body { padding: 2rem; }
+        
+        .pdf-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #eee; }
+        .pdf-info-item label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.25rem; }
+        .pdf-info-item p { font-weight: 600; color: #1a1d23; margin: 0; }
+        
+        .pdf-resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .pdf-resumo-item { text-align: center; padding: 1.25rem; border-radius: 12px; }
+        .pdf-resumo-item.total { background: #f3f4f6; }
+        .pdf-resumo-item.ok { background: #dcfce7; }
+        .pdf-resumo-item.nc { background: #fee2e2; }
+        .pdf-resumo-item.conf { background: #dbeafe; }
+        .pdf-resumo-valor { font-size: 2rem; font-weight: bold; }
+        .pdf-resumo-item.total .pdf-resumo-valor { color: #1a1d23; }
+        .pdf-resumo-item.ok .pdf-resumo-valor { color: #16a34a; }
+        .pdf-resumo-item.nc .pdf-resumo-valor { color: #dc2626; }
+        .pdf-resumo-item.conf .pdf-resumo-valor { color: #2563eb; }
+        .pdf-resumo-label { font-size: 0.7rem; text-transform: uppercase; color: #666; margin-top: 0.25rem; }
+        
+        /* NC Section no PDF */
+        .pdf-nc-section { background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+        .pdf-nc-title { color: #dc2626; font-weight: bold; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .pdf-nc-item { background: white; border-left: 4px solid #ef4444; padding: 1rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
+        .pdf-nc-item:last-child { margin-bottom: 0; }
+        .pdf-nc-item-titulo { font-weight: 600; color: #1a1d23; margin-bottom: 0.5rem; }
+        .pdf-nc-item-obs { font-size: 0.9rem; color: #666; font-style: italic; margin-bottom: 0.5rem; }
+        .pdf-nc-item-fotos { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+        .pdf-nc-item-fotos img { width: 120px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+        .pdf-nc-plano { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 0.75rem; margin-top: 0.5rem; }
+        .pdf-nc-plano-title { font-size: 0.8rem; font-weight: bold; color: #c2410c; margin-bottom: 0.5rem; }
+        .pdf-nc-plano-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; font-size: 0.85rem; }
+        .pdf-nc-plano-item label { font-size: 0.7rem; color: #666; }
+        .pdf-nc-plano-item p { margin: 0; font-weight: 500; color: #1a1d23; }
+        .prioridade-alta { color: #dc2626 !important; }
+        .prioridade-media { color: #f59e0b !important; }
+        .prioridade-baixa { color: #22c55e !important; }
+        
+        /* Seções do PDF */
+        .pdf-secao { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .pdf-secao-titulo { background: #1a1d23; color: white; padding: 0.75rem 1rem; font-weight: bold; border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 0.5rem; }
+        .pdf-secao-titulo::before { content: ''; width: 4px; height: 16px; background: #FFD100; border-radius: 2px; }
+        .pdf-secao-itens { border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+        
+        .pdf-item { display: flex; align-items: flex-start; gap: 1rem; padding: 0.75rem 1rem; border-bottom: 1px solid #f3f4f6; }
+        .pdf-item:last-child { border-bottom: none; }
+        .pdf-item-status { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: white; flex-shrink: 0; font-weight: bold; }
+        .pdf-item-status.ok { background: #22c55e; }
+        .pdf-item-status.nc { background: #ef4444; }
+        .pdf-item-status.na { background: #9ca3af; }
+        .pdf-item-texto { flex: 1; }
+        .pdf-item-pergunta { color: #1a1d23; line-height: 1.4; }
+        .pdf-item-obs { font-size: 0.85rem; color: #666; font-style: italic; margin-top: 0.25rem; }
+        
+        .pdf-footer { margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb; text-align: center; }
+        .pdf-assinatura { margin-bottom: 1rem; }
+        .pdf-assinatura-linha { width: 250px; border-bottom: 1px solid #1a1d23; margin: 0 auto 0.5rem; }
+        .pdf-assinatura-nome { font-weight: 600; color: #1a1d23; }
+        .pdf-assinatura-cargo { font-size: 0.9rem; color: #666; }
+        .pdf-gerado { font-size: 0.8rem; color: #9ca3af; margin-top: 1rem; }
+        
+        .acoes-relatorio { max-width: 800px; margin: 1rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .acoes-relatorio .btn { margin: 0; }
+        
+        /* Observações gerais */
+        .pdf-obs-gerais { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+        .pdf-obs-gerais-titulo { font-weight: 600; color: #475569; margin-bottom: 0.5rem; }
+        .pdf-obs-gerais-texto { color: #64748b; line-height: 1.5; }
+
+        /* Loading overlay */
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .loading-overlay.active { display: flex; }
+        .loading-content { background: white; padding: 2rem; border-radius: 16px; text-align: center; }
+        .loading-spinner { width: 50px; height: 50px; border: 4px solid #f3f4f6; border-top-color: #FFD100; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* PRINT STYLES */
+        @media print {
+            body { background: white; }
+            .header, .acoes-relatorio, .btn, .loading-overlay { display: none !important; }
+            .container { max-width: 100%; padding: 0; }
+            .pdf-container { box-shadow: none; }
+            .pdf-header, .pdf-titulo, .pdf-resumo-item, .pdf-nc-section, .pdf-item-status, .pdf-secao-titulo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { margin: 1cm; }
+        }
+        
+        /* Responsivo */
+        @media (max-width: 600px) {
+            .pdf-header { flex-direction: column; gap: 1rem; text-align: center; }
+            .pdf-numero { text-align: center; }
+            .pdf-info-grid { grid-template-columns: 1fr; }
+            .pdf-resumo { grid-template-columns: repeat(2, 1fr); }
+            .acoes-relatorio { grid-template-columns: 1fr; }
+            .pdf-nc-plano-grid { grid-template-columns: 1fr; }
+            .plano-acao-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Gerando PDF...</p>
+        </div>
+    </div>
+
+    <div class="header" id="app-header">
+        <h1>✓ SST Check Pro</h1>
+        <p style="font-size: 0.85rem; opacity: 0.8;">Checklist de Segurança do Trabalho</p>
+    </div>
+
+    <div class="container">
+        <!-- TELA 1: MENU -->
+        <div id="tela-menu">
+            <div class="card">
+                <h2 style="margin-bottom: 1rem;">📋 Nova Inspeção</h2>
+                <p style="color: #666; margin-bottom: 1rem;">Selecione o tipo de checklist:</p>
+                <button class="btn btn-yellow" onclick="selecionarChecklist('nr18')">
+                    🏗️ NR 18 - Canteiro de Obras
+                </button>
+                <button class="btn btn-yellow" onclick="selecionarChecklist('nr24')">
+                    🚿 NR 24 - Condições Sanitárias
+                </button>
+            </div>
+            
+            <div class="card">
+                <h2 style="margin-bottom: 1rem;">📁 Últimas Inspeções</h2>
+                <div id="historico-lista">
+                    <p style="color: #999; text-align: center; padding: 1rem;">Nenhuma inspeção realizada</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 2: DADOS DA OBRA -->
+        <div id="tela-dados" class="hidden">
+            <div class="card">
+                <h2 style="margin-bottom: 1rem;">📍 Dados da Inspeção</h2>
+                
+                <label>Nome da Obra / Local *</label>
+                <input type="text" id="input-obra" placeholder="Ex: Edifício Residencial Aurora">
+                
+                <label>Cliente / Construtora</label>
+                <input type="text" id="input-cliente" placeholder="Ex: Construtora ABC Ltda">
+                
+                <label>Endereço</label>
+                <input type="text" id="input-endereco" placeholder="Ex: Rua das Flores, 123 - São Paulo/SP">
+                
+                <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
+                
+                <label>Responsável pela Inspeção *</label>
+                <input type="text" id="input-responsavel" placeholder="Seu nome completo">
+                
+                <label>Cargo / Função</label>
+                <input type="text" id="input-cargo" placeholder="Ex: Técnico de Segurança do Trabalho">
+                
+                <label>Registro Profissional</label>
+                <input type="text" id="input-registro" placeholder="Ex: CREA 123456-D/SP">
+                
+                <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
+                
+                <label>Observações Iniciais</label>
+                <textarea id="input-obs-iniciais" rows="3" placeholder="Condições gerais, fase da obra, clima, etc."></textarea>
+                
+                <button class="btn btn-yellow" onclick="iniciarInspecao()">
+                    ▶️ Iniciar Inspeção
+                </button>
+                <button class="btn btn-gray" onclick="voltarMenu()">
+                    ← Voltar
+                </button>
+            </div>
+        </div>
+
+        <!-- TELA 3: CHECKLIST -->
+        <div id="tela-checklist" class="hidden">
+            <div class="card">
+                <h2 id="titulo-checklist" style="margin-bottom: 0.5rem;">Checklist</h2>
+                <p id="nome-obra-checklist" style="color: #666; font-size: 0.9rem;"></p>
+                
+                <div class="progress">
+                    <div class="progress-bar" id="barra-progresso" style="width: 0%"></div>
+                </div>
+                <p style="text-align: center; font-size: 0.85rem; color: #666;">
+                    <span id="respondidos">0</span> de <span id="total-itens">0</span> itens respondidos
+                </p>
+                
+                <div class="stats">
+                    <div class="stat stat-ok">
+                        <div class="stat-value" id="count-ok">0</div>
+                        <div class="stat-label">Conforme</div>
+                    </div>
+                    <div class="stat stat-nc">
+                        <div class="stat-value" id="count-nc">0</div>
+                        <div class="stat-label">Não Conf.</div>
+                    </div>
+                    <div class="stat stat-na">
+                        <div class="stat-value" id="count-na">0</div>
+                        <div class="stat-label">N/A</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="lista-itens" style="padding: 0.5rem;">
+                <!-- Itens serão inseridos aqui -->
+            </div>
+
+            <button class="btn btn-green" id="btn-finalizar" onclick="finalizarInspecao()" disabled>
+                ✓ Finalizar e Gerar Relatório
+            </button>
+            <button class="btn btn-gray" onclick="voltarMenu()">
+                ← Cancelar Inspeção
+            </button>
+        </div>
+
+        <!-- TELA 4: RELATÓRIO PDF -->
+        <div id="tela-relatorio" class="hidden">
+            <div class="pdf-container" id="pdf-container">
+                <!-- Relatório será gerado aqui -->
+            </div>
+            
+            <div class="acoes-relatorio">
+                <button class="btn btn-blue" onclick="baixarPDF()">
+                    📥 Baixar PDF
+                </button>
+                <button class="btn btn-green" onclick="compartilharWhatsApp()">
+                    📱 WhatsApp
+                </button>
+                <button class="btn btn-gray" onclick="window.print()">
+                    🖨️ Imprimir
+                </button>
+                <button class="btn btn-yellow" onclick="voltarMenu()">
+                    ← Nova Inspeção
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===================== DADOS DOS CHECKLISTS =====================
+        const CHECKLISTS = {
+            nr18: {
+                titulo: 'Inspeção de Canteiro de Obras',
+                nr: 'NR 18',
+                secoes: [
+                    {
+                        nome: 'EPIs - Equipamentos de Proteção Individual',
+                        itens: [
+                            'Todos os trabalhadores estão utilizando capacete de segurança?',
+                            'Os trabalhadores estão utilizando calçados de segurança (botinas)?',
+                            'Óculos de proteção estão sendo utilizados nas atividades que exigem?',
+                            'Protetores auriculares estão disponíveis e em uso em áreas ruidosas?',
+                            'Luvas de proteção adequadas estão sendo utilizadas?',
+                            'Os EPIs estão em bom estado de conservação?',
+                            'Existe controle de entrega de EPIs com fichas assinadas?'
+                        ]
+                    },
+                    {
+                        nome: 'Proteção Contra Quedas',
+                        itens: [
+                            'Guarda-corpos estão instalados em todas as periferias e aberturas?',
+                            'Os guarda-corpos possuem altura mínima de 1,20m?',
+                            'Aberturas no piso estão protegidas com tampas ou guarda-corpo?',
+                            'Redes de proteção estão instaladas e em bom estado?',
+                            'Trabalhadores em altura utilizam cinto tipo paraquedista?',
+                            'Existem pontos de ancoragem adequados?',
+                            'Linha de vida instalada onde necessário?'
+                        ]
+                    },
+                    {
+                        nome: 'Escadas, Rampas e Acessos',
+                        itens: [
+                            'Escadas de mão estão em bom estado com sapatas antiderrapantes?',
+                            'Escadas fixas possuem corrimão em ambos os lados?',
+                            'Rampas possuem piso antiderrapante?',
+                            'Passarelas têm largura mínima e guarda-corpo?',
+                            'Acessos estão desobstruídos e sinalizados?'
+                        ]
+                    },
+                    {
+                        nome: 'Instalações Elétricas',
+                        itens: [
+                            'Quadros elétricos estão fechados, identificados e aterrados?',
+                            'Disjuntores DR estão instalados e funcionando?',
+                            'Fios e cabos estão organizados, sem emendas expostas?',
+                            'Máquinas e equipamentos elétricos estão aterrados?',
+                            'Não há gambiarras ou ligações improvisadas?'
+                        ]
+                    },
+                    {
+                        nome: 'Ordem, Limpeza e Sinalização',
+                        itens: [
+                            'O canteiro está limpo e organizado?',
+                            'Materiais estão armazenados de forma segura?',
+                            'Vias de circulação estão desobstruídas?',
+                            'Sinalização de segurança está adequada e visível?',
+                            'Áreas de risco estão isoladas e sinalizadas?',
+                            'Entulho está sendo removido regularmente?',
+                            'Extintores estão sinalizados, acessíveis e dentro da validade?'
+                        ]
+                    }
+                ]
+            },
+            nr24: {
+                titulo: 'Condições Sanitárias e de Conforto',
+                nr: 'NR 24',
+                secoes: [
+                    {
+                        nome: 'Instalações Sanitárias',
+                        itens: [
+                            'Existem instalações sanitárias separadas por sexo?',
+                            'A proporção de vasos sanitários está adequada (1 para cada 20)?',
+                            'Os vasos sanitários estão em bom estado e funcionando?',
+                            'Existe papel higiênico disponível?',
+                            'Lavatórios possuem água corrente e sabão?',
+                            'Existe toalha de papel ou secador para as mãos?',
+                            'Piso é lavável e antiderrapante?',
+                            'Instalações estão limpas e higienizadas?',
+                            'Existe ventilação adequada?'
+                        ]
+                    },
+                    {
+                        nome: 'Vestiários',
+                        itens: [
+                            'Existem vestiários separados por sexo?',
+                            'Cada trabalhador possui armário individual?',
+                            'Armários permitem separação de roupa limpa e suja?',
+                            'Existem bancos em número suficiente?',
+                            'Chuveiros estão disponíveis e funcionando?',
+                            'A proporção de chuveiros está adequada (1 para cada 10)?',
+                            'Vestiários estão limpos e organizados?'
+                        ]
+                    },
+                    {
+                        nome: 'Refeitório / Local para Refeições',
+                        itens: [
+                            'Existe local adequado para refeições?',
+                            'Mesas e assentos estão em número suficiente?',
+                            'O local está limpo e higienizado?',
+                            'Existe lavatório para higiene das mãos?',
+                            'Lixeiras com tampa estão disponíveis?',
+                            'Equipamentos para aquecer refeições estão disponíveis?'
+                        ]
+                    },
+                    {
+                        nome: 'Água Potável',
+                        itens: [
+                            'Bebedouros estão disponíveis e funcionando?',
+                            'A proporção de bebedouros está adequada (1 para cada 25)?',
+                            'Bebedouros estão limpos e higienizados?',
+                            'Existe fornecimento de água potável?'
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // ===================== ESTADO DA APLICAÇÃO =====================
+        let checklistAtual = null;
+        let dadosInspecao = {};
+        let respostas = {};
+        let observacoes = {};
+        let fotos = {}; // { itemIndex: [base64, base64, ...] }
+        let planosAcao = {}; // { itemIndex: { responsavel, prazo, prioridade } }
+        let inspecoes = JSON.parse(localStorage.getItem('sst_inspecoes_v3') || '[]');
+
+        // ===================== FUNÇÕES DE NAVEGAÇÃO =====================
+        function mostrarTela(id) {
+            document.querySelectorAll('[id^="tela-"]').forEach(t => t.classList.add('hidden'));
+            document.getElementById('tela-' + id).classList.remove('hidden');
+            document.getElementById('app-header').style.display = id === 'relatorio' ? 'none' : 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function voltarMenu() {
+            checklistAtual = null;
+            respostas = {};
+            observacoes = {};
+            fotos = {};
+            planosAcao = {};
+            dadosInspecao = {};
+            document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+            mostrarTela('menu');
+            atualizarHistorico();
+        }
+
+        function selecionarChecklist(tipo) {
+            checklistAtual = tipo;
+            respostas = {};
+            observacoes = {};
+            fotos = {};
+            planosAcao = {};
+            mostrarTela('dados');
+        }
+
+        // ===================== INSPEÇÃO =====================
+        function iniciarInspecao() {
+            const obra = document.getElementById('input-obra').value.trim();
+            const resp = document.getElementById('input-responsavel').value.trim();
+            
+            if (!obra) {
+                alert('⚠️ Preencha o nome da obra!');
+                document.getElementById('input-obra').focus();
+                return;
+            }
+            if (!resp) {
+                alert('⚠️ Preencha o nome do responsável!');
+                document.getElementById('input-responsavel').focus();
+                return;
+            }
+
+            dadosInspecao = {
+                obra: obra,
+                cliente: document.getElementById('input-cliente').value.trim(),
+                endereco: document.getElementById('input-endereco').value.trim(),
+                responsavel: resp,
+                cargo: document.getElementById('input-cargo').value.trim(),
+                registro: document.getElementById('input-registro').value.trim(),
+                obsIniciais: document.getElementById('input-obs-iniciais').value.trim(),
+                dataInicio: new Date().toISOString(),
+                dataFormatada: new Date().toLocaleString('pt-BR')
+            };
+
+            renderizarChecklist();
+            mostrarTela('checklist');
+        }
+
+        function renderizarChecklist() {
+            const checklist = CHECKLISTS[checklistAtual];
+            document.getElementById('titulo-checklist').textContent = checklist.nr + ' - ' + checklist.titulo;
+            document.getElementById('nome-obra-checklist').textContent = '📍 ' + dadosInspecao.obra;
+            
+            let totalItens = 0;
+            checklist.secoes.forEach(s => totalItens += s.itens.length);
+            document.getElementById('total-itens').textContent = totalItens;
+
+            const container = document.getElementById('lista-itens');
+            let itemIndex = 0;
+            
+            container.innerHTML = checklist.secoes.map((secao, sIndex) => `
+                <div style="margin-bottom: 1rem;">
+                    <div style="background: #1a1d23; color: white; padding: 0.75rem 1rem; border-radius: 8px; font-weight: bold; font-size: 0.9rem;">
+                        ${secao.nome}
+                    </div>
+                    ${secao.itens.map((item, iIndex) => {
+                        const idx = itemIndex++;
+                        return `
+                            <div class="item" id="item-container-${idx}">
+                                <div class="item-question">${idx + 1}. ${item}</div>
+                                <div class="item-buttons">
+                                    <button onclick="responder(${idx}, 'ok')" id="btn-ok-${idx}">✓ Conf.</button>
+                                    <button onclick="responder(${idx}, 'nc')" id="btn-nc-${idx}">✗ NC</button>
+                                    <button onclick="responder(${idx}, 'na')" id="btn-na-${idx}">N/A</button>
+                                </div>
+                                
+                                <div class="item-extras">
+                                    <div class="item-obs">
+                                        <input type="text" id="obs-${idx}" placeholder="📝 Observação (opcional)" onchange="salvarObs(${idx}, this.value)">
+                                    </div>
+                                    
+                                    <div class="foto-section">
+                                        <label class="foto-btn" id="foto-btn-${idx}">
+                                            📷 Adicionar Foto
+                                            <input type="file" class="foto-input" accept="image/*" capture="environment" multiple onchange="adicionarFotos(${idx}, this.files)">
+                                        </label>
+                                        <div class="foto-preview" id="foto-preview-${idx}"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Plano de Ação (aparece só quando NC) -->
+                                <div class="plano-acao hidden" id="plano-${idx}">
+                                    <div class="plano-acao-title">⚠️ Plano de Ação para Não Conformidade</div>
+                                    <div class="plano-acao-grid">
+                                        <div>
+                                            <label>Responsável</label>
+                                            <input type="text" id="plano-resp-${idx}" placeholder="Quem vai corrigir?" onchange="salvarPlano(${idx})">
+                                        </div>
+                                        <div>
+                                            <label>Prazo</label>
+                                            <input type="date" id="plano-prazo-${idx}" onchange="salvarPlano(${idx})">
+                                        </div>
+                                    </div>
+                                    <div class="plano-acao-grid full" style="margin-top: 0.5rem;">
+                                        <div>
+                                            <label>Prioridade</label>
+                                            <select id="plano-prior-${idx}" onchange="salvarPlano(${idx})">
+                                                <option value="">Selecione...</option>
+                                                <option value="alta">🔴 Alta - Risco Grave/Iminente</option>
+                                                <option value="media">🟡 Média - Risco Moderado</option>
+                                                <option value="baixa">🟢 Baixa - Risco Menor</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `).join('');
+
+            atualizarProgresso();
+        }
+
+        function responder(index, valor) {
+            respostas[index] = valor;
+            
+            ['ok', 'nc', 'na'].forEach(tipo => {
+                document.getElementById(`btn-${tipo}-${index}`).className = '';
+            });
+            document.getElementById(`btn-${valor}-${index}`).className = `selected-${valor}`;
+            
+            // Mostrar/esconder plano de ação
+            const planoEl = document.getElementById(`plano-${index}`);
+            if (valor === 'nc') {
+                planoEl.classList.remove('hidden');
+            } else {
+                planoEl.classList.add('hidden');
+                delete planosAcao[index];
+            }
+            
+            atualizarProgresso();
+        }
+
+        function salvarObs(index, valor) {
+            observacoes[index] = valor;
+        }
+
+        function salvarPlano(index) {
+            planosAcao[index] = {
+                responsavel: document.getElementById(`plano-resp-${index}`).value,
+                prazo: document.getElementById(`plano-prazo-${index}`).value,
+                prioridade: document.getElementById(`plano-prior-${index}`).value
+            };
+        }
+
+        // ===================== FOTOS =====================
+        function adicionarFotos(index, files) {
+            if (!fotos[index]) fotos[index] = [];
+            
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Redimensionar imagem para não ficar muito pesada
+                    redimensionarImagem(e.target.result, 800, function(resizedBase64) {
+                        fotos[index].push(resizedBase64);
+                        renderizarFotos(index);
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function redimensionarImagem(base64, maxWidth, callback) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                callback(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.src = base64;
+        }
+
+        function renderizarFotos(index) {
+            const container = document.getElementById(`foto-preview-${index}`);
+            const btn = document.getElementById(`foto-btn-${index}`);
+            
+            if (fotos[index] && fotos[index].length > 0) {
+                btn.classList.add('has-photo');
+                btn.innerHTML = `📷 ${fotos[index].length} foto(s) <input type="file" class="foto-input" accept="image/*" capture="environment" multiple onchange="adicionarFotos(${index}, this.files)">`;
+                
+                container.innerHTML = fotos[index].map((foto, fIndex) => `
+                    <div class="foto-thumb">
+                        <img src="${foto}" alt="Foto ${fIndex + 1}">
+                        <button class="foto-thumb-remove" onclick="removerFoto(${index}, ${fIndex})">✕</button>
+                    </div>
+                `).join('');
+            } else {
+                btn.classList.remove('has-photo');
+                btn.innerHTML = `📷 Adicionar Foto <input type="file" class="foto-input" accept="image/*" capture="environment" multiple onchange="adicionarFotos(${index}, this.files)">`;
+                container.innerHTML = '';
+            }
+        }
+
+        function removerFoto(itemIndex, fotoIndex) {
+            fotos[itemIndex].splice(fotoIndex, 1);
+            renderizarFotos(itemIndex);
+        }
+
+        // ===================== PROGRESSO =====================
+        function atualizarProgresso() {
+            const checklist = CHECKLISTS[checklistAtual];
+            let total = 0;
+            checklist.secoes.forEach(s => total += s.itens.length);
+            
+            const respondidos = Object.keys(respostas).length;
+            const ok = Object.values(respostas).filter(r => r === 'ok').length;
+            const nc = Object.values(respostas).filter(r => r === 'nc').length;
+            const na = Object.values(respostas).filter(r => r === 'na').length;
+
+            document.getElementById('respondidos').textContent = respondidos;
+            document.getElementById('barra-progresso').style.width = ((respondidos / total) * 100) + '%';
+            document.getElementById('count-ok').textContent = ok;
+            document.getElementById('count-nc').textContent = nc;
+            document.getElementById('count-na').textContent = na;
+
+            document.getElementById('btn-finalizar').disabled = respondidos < total;
+        }
+
+        // ===================== FINALIZAR E GERAR RELATÓRIO =====================
+        function finalizarInspecao() {
+            const checklist = CHECKLISTS[checklistAtual];
+            
+            let total = 0;
+            checklist.secoes.forEach(s => total += s.itens.length);
+            
+            const ok = Object.values(respostas).filter(r => r === 'ok').length;
+            const nc = Object.values(respostas).filter(r => r === 'nc').length;
+            const na = Object.values(respostas).filter(r => r === 'na').length;
+            const aplicaveis = total - na;
+            const conformidade = aplicaveis > 0 ? Math.round((ok / aplicaveis) * 100) : 100;
+
+            // Coletar não conformidades
+            const naoConformidades = [];
+            let itemIndex = 0;
+            checklist.secoes.forEach(secao => {
+                secao.itens.forEach(item => {
+                    if (respostas[itemIndex] === 'nc') {
+                        naoConformidades.push({
+                            index: itemIndex,
+                            secao: secao.nome,
+                            item: item,
+                            obs: observacoes[itemIndex] || '',
+                            fotos: fotos[itemIndex] || [],
+                            plano: planosAcao[itemIndex] || {}
+                        });
+                    }
+                    itemIndex++;
+                });
+            });
+
+            // Salvar inspeção
+            const inspecao = {
+                id: Date.now(),
+                checklistTipo: checklistAtual,
+                checklistNome: checklist.titulo,
+                nr: checklist.nr,
+                dados: {...dadosInspecao},
+                respostas: {...respostas},
+                observacoes: {...observacoes},
+                fotos: {...fotos},
+                planosAcao: {...planosAcao},
+                estatisticas: { total, ok, nc, na, conformidade },
+                naoConformidades: naoConformidades,
+                dataFim: new Date().toISOString()
+            };
+            
+            inspecoes.push(inspecao);
+            // Limitar histórico para não estourar localStorage
+            if (inspecoes.length > 20) {
+                inspecoes = inspecoes.slice(-20);
+            }
+            localStorage.setItem('sst_inspecoes_v3', JSON.stringify(inspecoes));
+
+            gerarRelatorioPDF(inspecao);
+            mostrarTela('relatorio');
+        }
+
+        function gerarRelatorioPDF(inspecao) {
+            const checklist = CHECKLISTS[inspecao.checklistTipo];
+            const stats = inspecao.estatisticas;
+            const dataFim = new Date(inspecao.dataFim);
+            
+            // Gerar seções do checklist
+            let itemIndex = 0;
+            const secoesHTML = checklist.secoes.map(secao => {
+                const itensHTML = secao.itens.map(item => {
+                    const resp = inspecao.respostas[itemIndex];
+                    const obs = inspecao.observacoes[itemIndex] || '';
+                    const icone = resp === 'ok' ? '✓' : resp === 'nc' ? '✗' : '—';
+                    itemIndex++;
+                    
+                    return `
+                        <div class="pdf-item">
+                            <div class="pdf-item-status ${resp}">${icone}</div>
+                            <div class="pdf-item-texto">
+                                <div class="pdf-item-pergunta">${item}</div>
+                                ${obs ? `<div class="pdf-item-obs">📝 ${obs}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                return `
+                    <div class="pdf-secao">
+                        <div class="pdf-secao-titulo">${secao.nome}</div>
+                        <div class="pdf-secao-itens">${itensHTML}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Gerar HTML das NCs com fotos e plano de ação
+            const ncsHTML = inspecao.naoConformidades.length > 0 ? `
+                <div class="pdf-nc-section">
+                    <div class="pdf-nc-title">⚠️ NÃO CONFORMIDADES IDENTIFICADAS (${inspecao.naoConformidades.length})</div>
+                    ${inspecao.naoConformidades.map((nc, i) => {
+                        const prioridadeClass = nc.plano.prioridade ? `prioridade-${nc.plano.prioridade}` : '';
+                        const prioridadeText = nc.plano.prioridade === 'alta' ? '🔴 Alta' : 
+                                              nc.plano.prioridade === 'media' ? '🟡 Média' : 
+                                              nc.plano.prioridade === 'baixa' ? '🟢 Baixa' : '—';
+                        const prazoFormatado = nc.plano.prazo ? new Date(nc.plano.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+                        
+                        return `
+                            <div class="pdf-nc-item">
+                                <div class="pdf-nc-item-titulo">${i + 1}. ${nc.item}</div>
+                                ${nc.obs ? `<div class="pdf-nc-item-obs">📝 ${nc.obs}</div>` : ''}
+                                <div style="font-size: 0.8rem; color: #666;">Seção: ${nc.secao}</div>
+                                
+                                ${nc.fotos.length > 0 ? `
+                                    <div class="pdf-nc-item-fotos">
+                                        ${nc.fotos.map(foto => `<img src="${foto}" alt="Evidência fotográfica">`).join('')}
+                                    </div>
+                                ` : ''}
+                                
+                                ${(nc.plano.responsavel || nc.plano.prazo || nc.plano.prioridade) ? `
+                                    <div class="pdf-nc-plano">
+                                        <div class="pdf-nc-plano-title">📋 Plano de Ação</div>
+                                        <div class="pdf-nc-plano-grid">
+                                            <div class="pdf-nc-plano-item">
+                                                <label>Responsável</label>
+                                                <p>${nc.plano.responsavel || '—'}</p>
+                                            </div>
+                                            <div class="pdf-nc-plano-item">
+                                                <label>Prazo</label>
+                                                <p>${prazoFormatado}</p>
+                                            </div>
+                                            <div class="pdf-nc-plano-item">
+                                                <label>Prioridade</label>
+                                                <p class="${prioridadeClass}">${prioridadeText}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : `
+                <div style="background: #dcfce7; border: 2px solid #86efac; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+                    <div style="color: #16a34a; font-weight: bold;">Nenhuma não conformidade identificada!</div>
+                </div>
+            `;
+
+            // Gerar HTML do relatório
+            document.getElementById('pdf-container').innerHTML = `
+                <div class="pdf-header">
+                    <div class="pdf-logo">
+                        <div class="pdf-logo-icon">✓</div>
+                        <div class="pdf-logo-text">SST<span>Check</span>Pro</div>
+                    </div>
+                    <div class="pdf-numero">
+                        <div class="pdf-numero-label">Nº do Relatório</div>
+                        <div class="pdf-numero-value">#${inspecao.id}</div>
+                    </div>
+                </div>
+                
+                <div class="pdf-titulo">
+                    📋 RELATÓRIO DE INSPEÇÃO DE SEGURANÇA - ${inspecao.nr}
+                </div>
+                
+                <div class="pdf-body">
+                    <div class="pdf-info-grid">
+                        <div class="pdf-info-item">
+                            <label>Obra / Local</label>
+                            <p>${inspecao.dados.obra}</p>
+                        </div>
+                        <div class="pdf-info-item">
+                            <label>Cliente / Construtora</label>
+                            <p>${inspecao.dados.cliente || '—'}</p>
+                        </div>
+                        <div class="pdf-info-item">
+                            <label>Endereço</label>
+                            <p>${inspecao.dados.endereco || '—'}</p>
+                        </div>
+                        <div class="pdf-info-item">
+                            <label>Data da Inspeção</label>
+                            <p>${dataFim.toLocaleDateString('pt-BR')} às ${dataFim.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</p>
+                        </div>
+                        <div class="pdf-info-item">
+                            <label>Responsável</label>
+                            <p>${inspecao.dados.responsavel}</p>
+                        </div>
+                        <div class="pdf-info-item">
+                            <label>Cargo / Registro</label>
+                            <p>${inspecao.dados.cargo || '—'} ${inspecao.dados.registro ? '• ' + inspecao.dados.registro : ''}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-resumo">
+                        <div class="pdf-resumo-item total">
+                            <div class="pdf-resumo-valor">${stats.total}</div>
+                            <div class="pdf-resumo-label">Total de Itens</div>
+                        </div>
+                        <div class="pdf-resumo-item ok">
+                            <div class="pdf-resumo-valor">${stats.ok}</div>
+                            <div class="pdf-resumo-label">Conforme</div>
+                        </div>
+                        <div class="pdf-resumo-item nc">
+                            <div class="pdf-resumo-valor">${stats.nc}</div>
+                            <div class="pdf-resumo-label">Não Conforme</div>
+                        </div>
+                        <div class="pdf-resumo-item conf">
+                            <div class="pdf-resumo-valor">${stats.conformidade}%</div>
+                            <div class="pdf-resumo-label">Conformidade</div>
+                        </div>
+                    </div>
+                    
+                    ${inspecao.dados.obsIniciais ? `
+                        <div class="pdf-obs-gerais">
+                            <div class="pdf-obs-gerais-titulo">📝 Observações Gerais</div>
+                            <div class="pdf-obs-gerais-texto">${inspecao.dados.obsIniciais}</div>
+                        </div>
+                    ` : ''}
+                    
+                    ${ncsHTML}
+                    
+                    <h3 style="margin-bottom: 1rem; color: #1a1d23;">📋 Itens Verificados</h3>
+                    ${secoesHTML}
+                    
+                    <div class="pdf-footer">
+                        <div class="pdf-assinatura">
+                            <div class="pdf-assinatura-linha"></div>
+                            <div class="pdf-assinatura-nome">${inspecao.dados.responsavel}</div>
+                            <div class="pdf-assinatura-cargo">${inspecao.dados.cargo || 'Responsável pela Inspeção'}</div>
+                            ${inspecao.dados.registro ? `<div class="pdf-assinatura-cargo">${inspecao.dados.registro}</div>` : ''}
+                        </div>
+                        <div class="pdf-gerado">
+                            Relatório gerado em ${dataFim.toLocaleDateString('pt-BR')} às ${dataFim.toLocaleTimeString('pt-BR')}<br>
+                            SST Check Pro • Sistema de Inspeção de Segurança do Trabalho
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ===================== BAIXAR PDF =====================
+        function baixarPDF() {
+            const loading = document.getElementById('loading');
+            loading.classList.add('active');
+            
+            const element = document.getElementById('pdf-container');
+            const nomeArquivo = `Relatorio_SST_${dadosInspecao.obra.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+            
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: nomeArquivo,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    letterRendering: true
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                loading.classList.remove('active');
+            }).catch(err => {
+                loading.classList.remove('active');
+                alert('Erro ao gerar PDF. Tente usar o botão Imprimir.');
+                console.error(err);
+            });
+        }
+
+        // ===================== COMPARTILHAMENTO =====================
+        function compartilharWhatsApp() {
+            const stats = inspecoes[inspecoes.length - 1]?.estatisticas || {};
+            const texto = encodeURIComponent(
+                `📋 *RELATÓRIO DE INSPEÇÃO SST*\n\n` +
+                `🏗️ *Obra:* ${dadosInspecao.obra}\n` +
+                `📅 *Data:* ${new Date().toLocaleDateString('pt-BR')}\n` +
+                `👤 *Responsável:* ${dadosInspecao.responsavel}\n\n` +
+                `📊 *Resultado:*\n` +
+                `✅ Conforme: ${stats.ok || 0}\n` +
+                `❌ Não Conforme: ${stats.nc || 0}\n` +
+                `📈 Conformidade: ${stats.conformidade || 0}%\n\n` +
+                `_Relatório gerado pelo SST Check Pro_`
+            );
+            window.open(`https://wa.me/?text=${texto}`, '_blank');
+        }
+
+        // ===================== HISTÓRICO =====================
+        function atualizarHistorico() {
+            const container = document.getElementById('historico-lista');
+            
+            if (inspecoes.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 1rem;">Nenhuma inspeção realizada</p>';
+                return;
+            }
+
+            container.innerHTML = inspecoes.slice(-5).reverse().map(insp => {
+                const data = new Date(insp.dataFim);
+                const corConf = insp.estatisticas.conformidade >= 80 ? '#22c55e' : 
+                               insp.estatisticas.conformidade >= 60 ? '#f59e0b' : '#ef4444';
+                
+                return `
+                    <div style="padding: 0.75rem; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="verInspecao(${insp.id})">
+                        <div>
+                            <strong>${insp.dados.obra}</strong><br>
+                            <span style="color: #666; font-size: 0.8rem;">${insp.nr} • ${data.toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; color: ${corConf};">${insp.estatisticas.conformidade}%</div>
+                            <div style="font-size: 0.75rem; color: #999;">conformidade</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function verInspecao(id) {
+            const inspecao = inspecoes.find(i => i.id === id);
+            if (!inspecao) return;
+
+            dadosInspecao = inspecao.dados;
+            gerarRelatorioPDF(inspecao);
+            mostrarTela('relatorio');
+        }
+
+        // ===================== INICIALIZAÇÃO =====================
+        atualizarHistorico();
+    </script>
+</body>
+</html>
