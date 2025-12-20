@@ -1,28 +1,106 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Check, 
   ArrowLeft, 
   Save, 
   CheckCircle2, 
-  Brain,
   Camera,
-  FileText,
-  AlertTriangle,
-  Trash2,
+  X,
   Loader2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+
+type ResponseType = "ok" | "nc" | "na" | null;
+
+interface ItemResponse {
+  response: ResponseType;
+  observation: string;
+  photos: string[];
+  actionPlan?: {
+    responsible: string;
+    deadline: string;
+    priority: string;
+  };
+}
+
+interface ChecklistSection {
+  name: string;
+  items: string[];
+}
+
+interface NRChecklist {
+  id: number;
+  nrNumber: string;
+  nrName: string;
+  category: string;
+  items: { id: string; text: string; required?: boolean }[];
+}
+
+const SAMPLE_SECTIONS: ChecklistSection[] = [
+  {
+    name: "EPIs - Equipamentos de Proteção Individual",
+    items: [
+      "Todos os trabalhadores estão utilizando capacete de segurança?",
+      "Os trabalhadores estão utilizando calçados de segurança (botinas)?",
+      "Óculos de proteção estão sendo utilizados nas atividades que exigem?",
+      "Protetores auriculares estão disponíveis e em uso em áreas ruidosas?",
+      "Luvas de proteção adequadas estão sendo utilizadas?",
+      "Os EPIs estão em bom estado de conservação?",
+      "Existe controle de entrega de EPIs com fichas assinadas?",
+    ],
+  },
+  {
+    name: "Proteção Contra Quedas",
+    items: [
+      "Guarda-corpos estão instalados em todas as periferias e aberturas?",
+      "Os guarda-corpos possuem altura mínima de 1,20m?",
+      "Aberturas no piso estão protegidas com tampas ou guarda-corpo?",
+      "Redes de proteção estão instaladas e em bom estado?",
+      "Trabalhadores em altura utilizam cinto tipo paraquedista?",
+      "Existem pontos de ancoragem adequados?",
+      "Linha de vida instalada onde necessário?",
+    ],
+  },
+  {
+    name: "Escadas, Rampas e Acessos",
+    items: [
+      "Escadas de mão estão em bom estado com sapatas antiderrapantes?",
+      "Escadas fixas possuem corrimão em ambos os lados?",
+      "Rampas possuem piso antiderrapante?",
+      "Passarelas têm largura mínima e guarda-corpo?",
+      "Acessos estão desobstruídos e sinalizados?",
+    ],
+  },
+  {
+    name: "Instalações Elétricas",
+    items: [
+      "Quadros elétricos estão fechados, identificados e aterrados?",
+      "Disjuntores DR estão instalados e funcionando?",
+      "Fios e cabos estão organizados, sem emendas expostas?",
+      "Máquinas e equipamentos elétricos estão aterrados?",
+      "Não há gambiarras ou ligações improvisadas?",
+    ],
+  },
+  {
+    name: "Ordem, Limpeza e Sinalização",
+    items: [
+      "O canteiro está limpo e organizado?",
+      "Materiais estão armazenados de forma segura?",
+      "Vias de circulação estão desobstruídas?",
+      "Sinalização de segurança está adequada e visível?",
+      "Áreas de risco estão isoladas e sinalizadas?",
+      "Entulho está sendo removido regularmente?",
+      "Extintores estão sinalizados, acessíveis e dentro da validade?",
+    ],
+  },
+];
 
 export default function InspectionPage() {
   const [, params] = useRoute("/inspection/:id");
@@ -36,16 +114,44 @@ export default function InspectionPage() {
     inspectorName: "",
     observations: "",
   });
-  const [checklistData, setChecklistData] = useState<Record<string, Record<string, boolean>>>({});
+
+  const [responses, setResponses] = useState<Record<number, ItemResponse>>({});
 
   const { data: inspection, isLoading } = useQuery({
     queryKey: ["/api/inspections", inspectionId],
     enabled: !!inspectionId,
   });
 
-  const { data: nrChecklists } = useQuery({
+  const { data: nrChecklists } = useQuery<NRChecklist[]>({
     queryKey: ["/api/nr-checklists"],
   });
+
+  const allItems = useMemo(() => {
+    const items: { sectionName: string; text: string; globalIndex: number }[] = [];
+    let globalIndex = 0;
+    SAMPLE_SECTIONS.forEach((section) => {
+      section.items.forEach((item) => {
+        items.push({ sectionName: section.name, text: item, globalIndex });
+        globalIndex++;
+      });
+    });
+    return items;
+  }, []);
+
+  const totalItems = allItems.length;
+
+  const stats = useMemo(() => {
+    let ok = 0, nc = 0, na = 0;
+    Object.values(responses).forEach((r) => {
+      if (r.response === "ok") ok++;
+      else if (r.response === "nc") nc++;
+      else if (r.response === "na") na++;
+    });
+    return { ok, nc, na, answered: ok + nc + na };
+  }, [responses]);
+
+  const progressPercent = totalItems > 0 ? (stats.answered / totalItems) * 100 : 0;
+  const canFinish = stats.answered === totalItems;
 
   useEffect(() => {
     if (inspection) {
@@ -56,7 +162,8 @@ export default function InspectionPage() {
         observations: (inspection as any).observations || "",
       });
       if ((inspection as any).checklistData) {
-        setChecklistData((inspection as any).checklistData as Record<string, Record<string, boolean>>);
+        const saved = (inspection as any).checklistData as Record<number, ItemResponse>;
+        setResponses(saved);
       }
     }
   }, [inspection]);
@@ -84,364 +191,387 @@ export default function InspectionPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/inspections", inspectionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       toast({ title: "Concluída", description: "Inspeção finalizada com sucesso" });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", `/api/inspections/${inspectionId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       setLocation("/dashboard");
-      toast({ title: "Excluída", description: "Inspeção removida" });
-    },
-  });
-
-  const generateAIMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/inspections/${inspectionId}/action-plans/generate`);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inspections", inspectionId] });
-      toast({ 
-        title: "Planos Gerados", 
-        description: `${data.length} planos de ação criados pela IA` 
-      });
-    },
-    onError: () => {
-      toast({ 
-        title: "Erro", 
-        description: "Falha ao gerar planos de ação", 
-        variant: "destructive" 
-      });
     },
   });
 
   const handleSave = () => {
     updateMutation.mutate({
       ...formData,
-      checklistData,
+      checklistData: responses,
     });
   };
 
-  const handleChecklistChange = (nrNumber: string, itemId: string, checked: boolean) => {
-    setChecklistData((prev) => ({
+  const handleResponse = (index: number, value: ResponseType) => {
+    setResponses((prev) => ({
       ...prev,
-      [nrNumber]: {
-        ...prev[nrNumber],
-        [itemId]: checked,
+      [index]: {
+        ...prev[index],
+        response: value,
+        observation: prev[index]?.observation || "",
+        photos: prev[index]?.photos || [],
+        actionPlan: value === "nc" ? prev[index]?.actionPlan || { responsible: "", deadline: "", priority: "" } : undefined,
       },
     }));
   };
 
-  const calculateScore = () => {
-    let total = 0;
-    let checked = 0;
-    Object.values(checklistData).forEach((items) => {
-      Object.values(items).forEach((value) => {
-        total++;
-        if (value) checked++;
-      });
+  const handleObservation = (index: number, value: string) => {
+    setResponses((prev) => ({
+      ...prev,
+      [index]: {
+        ...prev[index],
+        response: prev[index]?.response || null,
+        observation: value,
+        photos: prev[index]?.photos || [],
+      },
+    }));
+  };
+
+  const handleActionPlan = (index: number, field: string, value: string) => {
+    setResponses((prev) => ({
+      ...prev,
+      [index]: {
+        ...prev[index],
+        response: prev[index]?.response || null,
+        observation: prev[index]?.observation || "",
+        photos: prev[index]?.photos || [],
+        actionPlan: {
+          ...prev[index]?.actionPlan,
+          [field]: value,
+        } as any,
+      },
+    }));
+  };
+
+  const handlePhotoUpload = (index: number, files: FileList | null) => {
+    if (!files) return;
+    
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        setResponses((prev) => ({
+          ...prev,
+          [index]: {
+            ...prev[index],
+            response: prev[index]?.response || null,
+            observation: prev[index]?.observation || "",
+            photos: [...(prev[index]?.photos || []), base64],
+          },
+        }));
+      };
+      reader.readAsDataURL(file);
     });
-    return total > 0 ? Math.round((checked / total) * 100) : 0;
+  };
+
+  const handleRemovePhoto = (index: number, photoIndex: number) => {
+    setResponses((prev) => ({
+      ...prev,
+      [index]: {
+        ...prev[index],
+        photos: prev[index]?.photos.filter((_, i) => i !== photoIndex) || [],
+      },
+    }));
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#1A1D23]">
-        <header className="sticky top-0 z-50 bg-[#1A1D23]/95 backdrop-blur-md border-b border-[#2D3139]">
-          <div className="max-w-7xl mx-auto flex h-16 items-center gap-4 px-4 md:px-8">
-            <Skeleton className="h-6 w-6 bg-[#4A4E57]" />
-            <Skeleton className="h-6 w-32 bg-[#4A4E57]" />
-          </div>
+      <div className="min-h-screen bg-[#f5f5f5]">
+        <header className="bg-[#1a1d23] text-white p-4 text-center sticky top-0 z-50">
+          <Skeleton className="h-6 w-48 mx-auto bg-[#4A4E57]" />
         </header>
-        <main className="max-w-4xl mx-auto px-4 md:px-8 py-8">
-          <Skeleton className="h-96 w-full bg-[#4A4E57] rounded-xl" />
-        </main>
+        <div className="max-w-[600px] mx-auto p-4">
+          <Skeleton className="h-48 w-full bg-white rounded-xl" />
+        </div>
       </div>
     );
   }
 
-  const actionPlans = (inspection as any)?.actionPlans || [];
-
   return (
-    <div className="min-h-screen bg-[#1A1D23] text-white">
+    <div className="min-h-screen bg-[#f5f5f5]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#1A1D23]/95 backdrop-blur-md border-b border-[#2D3139]">
-        <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 md:px-8">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-[#2D3139]" data-testid="button-back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#FFD100] rounded-lg flex items-center justify-center">
-                <Check className="w-4 h-4 text-[#1A1D23] stroke-[3]" />
-              </div>
-              <span className="font-bold">Inspeção</span>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              (inspection as any)?.status === "completed" 
-                ? "bg-[#34C759]/20 text-[#34C759]" 
-                : "bg-[#8B9099]/20 text-[#8B9099]"
-            }`}>
-              {(inspection as any)?.status === "completed" ? "Concluída" : "Rascunho"}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className="border-white/20 text-white hover:bg-white/10"
-              data-testid="button-save"
-            >
-              {updateMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Salvar
+      <header className="bg-[#1a1d23] text-white p-4 text-center sticky top-0 z-50">
+        <div className="flex items-center justify-between max-w-[600px] mx-auto">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" data-testid="button-back">
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            {(inspection as any)?.status !== "completed" && (
-              <Button
-                onClick={() => completeMutation.mutate()}
-                disabled={completeMutation.isPending}
-                className="bg-[#34C759] text-white hover:bg-[#2da94d]"
-                data-testid="button-complete"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Finalizar
-              </Button>
-            )}
+          </Link>
+          <div>
+            <h1 className="text-[#FFD100] font-bold text-lg flex items-center gap-2 justify-center">
+              <Check className="w-5 h-5" />
+              SST Check Pro
+            </h1>
+            <p className="text-xs opacity-80">Checklist de Segurança do Trabalho</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="text-white hover:bg-white/10"
+            data-testid="button-save"
+          >
+            {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+          </Button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 md:px-8 py-8">
-        <Tabs defaultValue="info" className="space-y-6">
-          <TabsList className="bg-[#2D3139] border border-white/5 p-1">
-            <TabsTrigger value="info" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-info">
-              <FileText className="h-4 w-4 mr-2" />
-              Informações
-            </TabsTrigger>
-            <TabsTrigger value="checklist" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-checklist">
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Checklist
-            </TabsTrigger>
-            <TabsTrigger value="photos" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-photos">
-              <Camera className="h-4 w-4 mr-2" />
-              Fotos
-            </TabsTrigger>
-            <TabsTrigger value="actions" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-actions">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Ações
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="info">
-            <div className="bg-[#2D3139] rounded-xl border border-white/5 p-6">
-              <h2 className="font-bold text-lg mb-1">Informações da Inspeção</h2>
-              <p className="text-sm text-[#8B9099] mb-6">Dados gerais sobre a inspeção</p>
-              
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title" className="text-white">Título</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Nome da inspeção"
-                    className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
-                    data-testid="input-title"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location" className="text-white">Local</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="Local da inspeção"
-                    className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
-                    data-testid="input-location"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="inspector" className="text-white">Inspetor</Label>
-                  <Input
-                    id="inspector"
-                    value={formData.inspectorName}
-                    onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })}
-                    placeholder="Nome do inspetor"
-                    className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
-                    data-testid="input-inspector"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white">Score</Label>
-                  <div className="h-10 px-3 py-2 rounded-md bg-[#1A1D23] border border-white/10 flex items-center">
-                    <span className="font-bold text-[#FFD100]">{calculateScore()}%</span>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="observations" className="text-white">Observações</Label>
-                <Textarea
-                  id="observations"
-                  value={formData.observations}
-                  onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                  placeholder="Observações gerais sobre a inspeção..."
-                  rows={4}
-                  className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
-                  data-testid="input-observations"
-                />
-              </div>
+      <div className="max-w-[600px] mx-auto p-4">
+        {/* Info Card */}
+        <div className="bg-white rounded-xl p-6 mb-4 shadow-sm">
+          <h2 className="font-bold text-lg mb-4 text-[#1a1d23]">NR 18 - Inspeção de Canteiro de Obras</h2>
+          
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Nome da Obra / Local *</label>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Ex: Edifício Residencial Aurora"
+                className="border-2 border-gray-200 focus:border-[#FFD100]"
+                data-testid="input-title"
+              />
             </div>
-          </TabsContent>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Responsável pela Inspeção *</label>
+              <Input
+                value={formData.inspectorName}
+                onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })}
+                placeholder="Seu nome completo"
+                className="border-2 border-gray-200 focus:border-[#FFD100]"
+                data-testid="input-inspector"
+              />
+            </div>
+          </div>
 
-          <TabsContent value="checklist">
-            <div className="space-y-4">
-              {(nrChecklists as any[])?.map((nr: any) => (
-                <div key={nr.id} className="bg-[#2D3139] rounded-xl border border-white/5 overflow-hidden">
-                  <div className="p-5 border-b border-white/5">
-                    <div className="flex items-center gap-3">
-                      <div className="px-2 py-1 bg-[#FFD100]/20 text-[#FFD100] rounded text-sm font-bold">
-                        {nr.nrNumber}
+          {/* Progress Bar */}
+          <div className="bg-gray-200 h-2.5 rounded-full overflow-hidden mb-2">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${progressPercent}%`,
+                background: "linear-gradient(90deg, #FFD100, #f59e0b)",
+              }}
+            />
+          </div>
+          <p className="text-center text-sm text-gray-600 mb-4">
+            <span className="font-semibold">{stats.answered}</span> de <span className="font-semibold">{totalItems}</span> itens respondidos
+          </p>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-green-50 rounded-lg p-3 text-center">
+              <div className="text-3xl font-bold text-green-600" data-testid="stat-ok">{stats.ok}</div>
+              <div className="text-xs text-green-700 uppercase font-semibold">Conforme</div>
+            </div>
+            <div className="bg-red-50 rounded-lg p-3 text-center">
+              <div className="text-3xl font-bold text-red-600" data-testid="stat-nc">{stats.nc}</div>
+              <div className="text-xs text-red-700 uppercase font-semibold">Não Conf.</div>
+            </div>
+            <div className="bg-gray-100 rounded-lg p-3 text-center">
+              <div className="text-3xl font-bold text-gray-600" data-testid="stat-na">{stats.na}</div>
+              <div className="text-xs text-gray-700 uppercase font-semibold">N/A</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Checklist Items */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+          {SAMPLE_SECTIONS.map((section, sectionIndex) => {
+            let startIndex = 0;
+            for (let i = 0; i < sectionIndex; i++) {
+              startIndex += SAMPLE_SECTIONS[i].items.length;
+            }
+
+            return (
+              <div key={section.name} className="mb-4 last:mb-0">
+                {/* Section Header */}
+                <div className="bg-[#1a1d23] text-white px-4 py-3 font-semibold text-sm flex items-center gap-2">
+                  <span className="w-1 h-4 bg-[#FFD100] rounded-full" />
+                  {section.name}
+                </div>
+
+                {/* Items */}
+                {section.items.map((item, itemIndex) => {
+                  const globalIndex = startIndex + itemIndex;
+                  const itemResponse = responses[globalIndex];
+                  const currentResponse = itemResponse?.response;
+
+                  return (
+                    <div key={globalIndex} className="p-4 border-b border-gray-100 last:border-b-0">
+                      {/* Question */}
+                      <p className="font-medium text-gray-800 mb-3 leading-relaxed">
+                        {globalIndex + 1}. {item}
+                      </p>
+
+                      {/* Response Buttons */}
+                      <div className="flex gap-2 mb-3">
+                        <button
+                          onClick={() => handleResponse(globalIndex, "ok")}
+                          className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
+                            currentResponse === "ok"
+                              ? "bg-green-500 text-white border-green-500"
+                              : "bg-white text-gray-700 border-gray-200 hover:border-green-300"
+                          }`}
+                          data-testid={`btn-ok-${globalIndex}`}
+                        >
+                          ✓ Conf.
+                        </button>
+                        <button
+                          onClick={() => handleResponse(globalIndex, "nc")}
+                          className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
+                            currentResponse === "nc"
+                              ? "bg-red-500 text-white border-red-500"
+                              : "bg-white text-gray-700 border-gray-200 hover:border-red-300"
+                          }`}
+                          data-testid={`btn-nc-${globalIndex}`}
+                        >
+                          ✗ NC
+                        </button>
+                        <button
+                          onClick={() => handleResponse(globalIndex, "na")}
+                          className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
+                            currentResponse === "na"
+                              ? "bg-gray-500 text-white border-gray-500"
+                              : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                          }`}
+                          data-testid={`btn-na-${globalIndex}`}
+                        >
+                          N/A
+                        </button>
                       </div>
-                      <h3 className="font-bold">{nr.nrName}</h3>
-                    </div>
-                    <p className="text-sm text-[#8B9099] mt-1">{nr.category}</p>
-                  </div>
-                  <div className="p-5 space-y-3">
-                    {(nr.items as any[])?.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1D23] hover:bg-[#1A1D23]/80 transition-colors"
-                      >
-                        <Checkbox
-                          id={item.id}
-                          checked={checklistData[nr.nrNumber]?.[item.id] || false}
-                          onCheckedChange={(checked) =>
-                            handleChecklistChange(nr.nrNumber, item.id, !!checked)
-                          }
-                          className="border-white/30 data-[state=checked]:bg-[#34C759] data-[state=checked]:border-[#34C759]"
-                          data-testid={`checkbox-${item.id}`}
+
+                      {/* Extras: Observation & Photo */}
+                      <div className="pt-3 border-t border-dashed border-gray-200">
+                        <input
+                          type="text"
+                          placeholder="Observação (opcional)"
+                          value={itemResponse?.observation || ""}
+                          onChange={(e) => handleObservation(globalIndex, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-[#FFD100]"
+                          data-testid={`input-obs-${globalIndex}`}
                         />
-                        <Label htmlFor={item.id} className="flex-1 cursor-pointer text-white/90">
-                          {item.text}
-                          {item.required && (
-                            <span className="text-[#FF3B30] ml-1">*</span>
-                          )}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
 
-          <TabsContent value="photos">
-            <div className="bg-[#2D3139] rounded-xl border border-white/5 p-6">
-              <h2 className="font-bold text-lg mb-1">Fotos da Inspeção</h2>
-              <p className="text-sm text-[#8B9099] mb-6">Registre evidências fotográficas</p>
-              
-              <div className="text-center py-16">
-                <Camera className="h-16 w-16 mx-auto mb-4 text-[#4A4E57]" />
-                <p className="text-[#8B9099] mb-2">Funcionalidade de upload de fotos em desenvolvimento</p>
-                <p className="text-sm text-[#4A4E57]">Em breve você poderá anexar fotos às inspeções</p>
-              </div>
-            </div>
-          </TabsContent>
+                        {/* Photo Upload */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <label
+                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-all ${
+                              (itemResponse?.photos?.length || 0) > 0
+                                ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
+                                : "bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 hover:border-gray-400"
+                            }`}
+                          >
+                            <Camera className="w-4 h-4" />
+                            {(itemResponse?.photos?.length || 0) > 0 ? `${itemResponse.photos.length} foto(s)` : "Adicionar Foto"}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => handlePhotoUpload(globalIndex, e.target.files)}
+                              data-testid={`input-photo-${globalIndex}`}
+                            />
+                          </label>
 
-          <TabsContent value="actions">
-            <div className="bg-[#2D3139] rounded-xl border border-white/5 overflow-hidden">
-              <div className="p-5 border-b border-white/5 flex items-center justify-between">
-                <div>
-                  <h2 className="font-bold text-lg">Planos de Ação</h2>
-                  <p className="text-sm text-[#8B9099]">Ações corretivas para não conformidades</p>
-                </div>
-                <Button
-                  onClick={() => generateAIMutation.mutate()}
-                  disabled={generateAIMutation.isPending}
-                  className="bg-[#FFD100] text-[#1A1D23] hover:bg-[#E6BC00] font-bold"
-                  data-testid="button-generate-ai"
-                >
-                  {generateAIMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Brain className="h-4 w-4 mr-2" />
-                  )}
-                  Gerar com IA
-                </Button>
-              </div>
-              <div className="p-5">
-                {actionPlans.length === 0 ? (
-                  <div className="text-center py-12">
-                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-[#4A4E57]" />
-                    <p className="text-[#8B9099] mb-2">Nenhum plano de ação ainda</p>
-                    <p className="text-sm text-[#4A4E57]">Clique em "Gerar com IA" para criar planos automaticamente</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {actionPlans.map((plan: any) => (
-                      <div key={plan.id} className="bg-[#1A1D23] rounded-xl p-4 border border-white/5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                plan.priority === "high"
-                                  ? "bg-[#FF3B30]/20 text-[#FF3B30]"
-                                  : plan.priority === "medium"
-                                  ? "bg-[#FFD100]/20 text-[#FFD100]"
-                                  : "bg-[#8B9099]/20 text-[#8B9099]"
-                              }`}>
-                                {plan.priority === "high" ? "Alta" : plan.priority === "medium" ? "Média" : "Baixa"}
-                              </div>
-                              {plan.aiGenerated && (
-                                <div className="px-2 py-0.5 rounded text-xs font-bold bg-white/10 text-white/70 flex items-center gap-1">
-                                  <Brain className="h-3 w-3" />
-                                  IA
-                                </div>
-                              )}
+                          {/* Photo Previews */}
+                          {itemResponse?.photos?.map((photo, photoIndex) => (
+                            <div key={photoIndex} className="relative w-14 h-14 rounded-lg overflow-hidden">
+                              <img src={photo} alt="" className="w-full h-full object-cover" />
+                              <button
+                                onClick={() => handleRemovePhoto(globalIndex, photoIndex)}
+                                className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                                data-testid={`btn-remove-photo-${globalIndex}-${photoIndex}`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
                             </div>
-                            <h4 className="font-medium mb-1">{plan.issue}</h4>
-                            <p className="text-sm text-[#8B9099]">{plan.recommendation}</p>
-                          </div>
-                          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            plan.status === "completed" 
-                              ? "bg-[#34C759]/20 text-[#34C759]" 
-                              : "bg-[#8B9099]/20 text-[#8B9099]"
-                          }`}>
-                            {plan.status === "completed" ? "Concluído" : "Pendente"}
-                          </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
 
-        <div className="mt-8 pt-8 border-t border-white/10">
-          <Button
-            variant="destructive"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-            className="bg-[#FF3B30] hover:bg-[#d63129]"
-            data-testid="button-delete"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Excluir Inspeção
-          </Button>
+                      {/* Action Plan (only for NC) */}
+                      {currentResponse === "nc" && (
+                        <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                          <div className="text-sm font-bold text-red-700 mb-2 flex items-center gap-1">
+                            <span>⚠️</span> Plano de Ação para Não Conformidade
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                              <label className="text-xs text-gray-600 block mb-1">Responsável</label>
+                              <input
+                                type="text"
+                                placeholder="Quem vai corrigir?"
+                                value={itemResponse?.actionPlan?.responsible || ""}
+                                onChange={(e) => handleActionPlan(globalIndex, "responsible", e.target.value)}
+                                className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]"
+                                data-testid={`input-action-responsible-${globalIndex}`}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-600 block mb-1">Prazo</label>
+                              <input
+                                type="date"
+                                value={itemResponse?.actionPlan?.deadline || ""}
+                                onChange={(e) => handleActionPlan(globalIndex, "deadline", e.target.value)}
+                                className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]"
+                                data-testid={`input-action-deadline-${globalIndex}`}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-600 block mb-1">Prioridade</label>
+                            <select
+                              value={itemResponse?.actionPlan?.priority || ""}
+                              onChange={(e) => handleActionPlan(globalIndex, "priority", e.target.value)}
+                              className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]"
+                              data-testid={`select-action-priority-${globalIndex}`}
+                            >
+                              <option value="">Selecione...</option>
+                              <option value="alta">Alta - Risco Grave/Iminente</option>
+                              <option value="media">Média - Risco Moderado</option>
+                              <option value="baixa">Baixa - Risco Menor</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
-      </main>
+
+        {/* Action Buttons */}
+        <button
+          onClick={() => {
+            handleSave();
+            completeMutation.mutate();
+          }}
+          disabled={!canFinish || completeMutation.isPending}
+          className={`w-full py-4 rounded-lg font-bold text-lg mb-3 transition-all flex items-center justify-center gap-2 ${
+            canFinish
+              ? "bg-green-500 text-white hover:bg-green-600"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
+          data-testid="button-finish"
+        >
+          {completeMutation.isPending ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5" />
+          )}
+          Finalizar e Gerar Relatório
+        </button>
+
+        <Link href="/dashboard">
+          <button className="w-full py-4 rounded-lg font-bold text-lg bg-gray-500 text-white hover:bg-gray-600 transition-all" data-testid="button-cancel">
+            ← Cancelar Inspeção
+          </button>
+        </Link>
+      </div>
     </div>
   );
 }
