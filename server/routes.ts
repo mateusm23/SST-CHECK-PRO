@@ -22,10 +22,11 @@ export async function registerRoutes(
   app.get(api.subscription.current.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const userEmail = req.user.email || req.user.claims?.email;
+      const userEmail = (req.user.email || req.user.claims?.email || "").toLowerCase().trim();
       
       // Check if user is VIP (full unlimited access)
-      const isVIP = VIP_EMAILS.includes(userEmail?.toLowerCase());
+      const isVIP = VIP_EMAILS.some(vip => vip.toLowerCase() === userEmail);
+      console.log("VIP check:", { userEmail, isVIP, vipList: VIP_EMAILS });
       
       if (isVIP) {
         // VIP users get unlimited business plan access
@@ -215,10 +216,10 @@ export async function registerRoutes(
   app.post(api.inspections.create.path, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const userEmail = req.user.email || req.user.claims?.email;
+      const userEmail = (req.user.email || req.user.claims?.email || "").toLowerCase().trim();
       
       // VIP users bypass all limits
-      const isVIP = VIP_EMAILS.includes(userEmail?.toLowerCase());
+      const isVIP = VIP_EMAILS.some(vip => vip.toLowerCase() === userEmail);
       
       if (!isVIP) {
         let userSub = await storage.getUserSubscription(userId);
