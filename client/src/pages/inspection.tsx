@@ -1,18 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Shield, 
+  Check, 
   ArrowLeft, 
   Save, 
   CheckCircle2, 
@@ -23,7 +21,6 @@ import {
   Trash2,
   Loader2
 } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,19 +47,19 @@ export default function InspectionPage() {
     queryKey: ["/api/nr-checklists"],
   });
 
-  useState(() => {
+  useEffect(() => {
     if (inspection) {
       setFormData({
-        title: inspection.title || "",
-        location: inspection.location || "",
-        inspectorName: inspection.inspectorName || "",
-        observations: inspection.observations || "",
+        title: (inspection as any).title || "",
+        location: (inspection as any).location || "",
+        inspectorName: (inspection as any).inspectorName || "",
+        observations: (inspection as any).observations || "",
       });
-      if (inspection.checklistData) {
-        setChecklistData(inspection.checklistData as Record<string, Record<string, boolean>>);
+      if ((inspection as any).checklistData) {
+        setChecklistData((inspection as any).checklistData as Record<string, Record<string, boolean>>);
       }
     }
-  });
+  }, [inspection]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -153,15 +150,15 @@ export default function InspectionPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-          <div className="container mx-auto flex h-14 items-center gap-4 px-4">
-            <Skeleton className="h-6 w-6" />
-            <Skeleton className="h-6 w-32" />
+      <div className="min-h-screen bg-[#1A1D23]">
+        <header className="sticky top-0 z-50 bg-[#1A1D23]/95 backdrop-blur-md border-b border-[#2D3139]">
+          <div className="max-w-7xl mx-auto flex h-16 items-center gap-4 px-4 md:px-8">
+            <Skeleton className="h-6 w-6 bg-[#4A4E57]" />
+            <Skeleton className="h-6 w-32 bg-[#4A4E57]" />
           </div>
         </header>
-        <main className="container mx-auto px-4 py-8">
-          <Skeleton className="h-96 w-full" />
+        <main className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+          <Skeleton className="h-96 w-full bg-[#4A4E57] rounded-xl" />
         </main>
       </div>
     );
@@ -170,29 +167,36 @@ export default function InspectionPage() {
   const actionPlans = (inspection as any)?.actionPlans || [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex h-14 items-center justify-between gap-4 px-4">
+    <div className="min-h-screen bg-[#1A1D23] text-white">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-[#1A1D23]/95 backdrop-blur-md border-b border-[#2D3139]">
+        <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild data-testid="button-back">
-              <Link href="/dashboard">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-[#2D3139]" data-testid="button-back">
                 <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg">Inspeção</span>
+              </Button>
+            </Link>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-[#FFD100] rounded-lg flex items-center justify-center">
+                <Check className="w-4 h-4 text-[#1A1D23] stroke-[3]" />
+              </div>
+              <span className="font-bold">Inspeção</span>
             </div>
-            <Badge variant={inspection?.status === "completed" ? "default" : "secondary"}>
-              {inspection?.status === "completed" ? "Concluída" : "Rascunho"}
-            </Badge>
+            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              (inspection as any)?.status === "completed" 
+                ? "bg-[#34C759]/20 text-[#34C759]" 
+                : "bg-[#8B9099]/20 text-[#8B9099]"
+            }`}>
+              {(inspection as any)?.status === "completed" ? "Concluída" : "Rascunho"}
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <Button
               variant="outline"
               onClick={handleSave}
               disabled={updateMutation.isPending}
+              className="border-white/20 text-white hover:bg-white/10"
               data-testid="button-save"
             >
               {updateMutation.isPending ? (
@@ -202,10 +206,11 @@ export default function InspectionPage() {
               )}
               Salvar
             </Button>
-            {inspection?.status !== "completed" && (
+            {(inspection as any)?.status !== "completed" && (
               <Button
                 onClick={() => completeMutation.mutate()}
                 disabled={completeMutation.isPending}
+                className="bg-[#34C759] text-white hover:bg-[#2da94d]"
                 data-testid="button-complete"
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -216,154 +221,154 @@ export default function InspectionPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 md:px-8 py-8">
         <Tabs defaultValue="info" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="info" data-testid="tab-info">
+          <TabsList className="bg-[#2D3139] border border-white/5 p-1">
+            <TabsTrigger value="info" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-info">
               <FileText className="h-4 w-4 mr-2" />
               Informações
             </TabsTrigger>
-            <TabsTrigger value="checklist" data-testid="tab-checklist">
+            <TabsTrigger value="checklist" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-checklist">
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Checklist
             </TabsTrigger>
-            <TabsTrigger value="photos" data-testid="tab-photos">
+            <TabsTrigger value="photos" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-photos">
               <Camera className="h-4 w-4 mr-2" />
               Fotos
             </TabsTrigger>
-            <TabsTrigger value="actions" data-testid="tab-actions">
+            <TabsTrigger value="actions" className="data-[state=active]:bg-[#FFD100] data-[state=active]:text-[#1A1D23]" data-testid="tab-actions">
               <AlertTriangle className="h-4 w-4 mr-2" />
               Ações
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="info">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações da Inspeção</CardTitle>
-                <CardDescription>Dados gerais sobre a inspeção</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Nome da inspeção"
-                      data-testid="input-title"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Local</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="Local da inspeção"
-                      data-testid="input-location"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="inspector">Inspetor</Label>
-                    <Input
-                      id="inspector"
-                      value={formData.inspectorName}
-                      onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })}
-                      placeholder="Nome do inspetor"
-                      data-testid="input-inspector"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Score</Label>
-                    <div className="h-9 px-3 py-2 border rounded-md bg-muted flex items-center">
-                      <span className="font-medium">{calculateScore()}%</span>
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-[#2D3139] rounded-xl border border-white/5 p-6">
+              <h2 className="font-bold text-lg mb-1">Informações da Inspeção</h2>
+              <p className="text-sm text-[#8B9099] mb-6">Dados gerais sobre a inspeção</p>
+              
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div className="space-y-2">
-                  <Label htmlFor="observations">Observações</Label>
-                  <Textarea
-                    id="observations"
-                    value={formData.observations}
-                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                    placeholder="Observações gerais sobre a inspeção..."
-                    rows={4}
-                    data-testid="input-observations"
+                  <Label htmlFor="title" className="text-white">Título</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Nome da inspeção"
+                    className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
+                    data-testid="input-title"
                   />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-white">Local</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="Local da inspeção"
+                    className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
+                    data-testid="input-location"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="inspector" className="text-white">Inspetor</Label>
+                  <Input
+                    id="inspector"
+                    value={formData.inspectorName}
+                    onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })}
+                    placeholder="Nome do inspetor"
+                    className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
+                    data-testid="input-inspector"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white">Score</Label>
+                  <div className="h-10 px-3 py-2 rounded-md bg-[#1A1D23] border border-white/10 flex items-center">
+                    <span className="font-bold text-[#FFD100]">{calculateScore()}%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="observations" className="text-white">Observações</Label>
+                <Textarea
+                  id="observations"
+                  value={formData.observations}
+                  onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                  placeholder="Observações gerais sobre a inspeção..."
+                  rows={4}
+                  className="bg-[#1A1D23] border-white/10 text-white placeholder:text-[#8B9099]"
+                  data-testid="input-observations"
+                />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="checklist">
             <div className="space-y-4">
               {(nrChecklists as any[])?.map((nr: any) => (
-                <Card key={nr.id}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Badge variant="outline">{nr.nrNumber}</Badge>
-                      {nr.nrName}
-                    </CardTitle>
-                    <CardDescription>{nr.category}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {(nr.items as any[])?.map((item: any) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50"
-                        >
-                          <Checkbox
-                            id={item.id}
-                            checked={checklistData[nr.nrNumber]?.[item.id] || false}
-                            onCheckedChange={(checked) =>
-                              handleChecklistChange(nr.nrNumber, item.id, !!checked)
-                            }
-                            data-testid={`checkbox-${item.id}`}
-                          />
-                          <Label htmlFor={item.id} className="flex-1 cursor-pointer">
-                            {item.text}
-                            {item.required && (
-                              <span className="text-destructive ml-1">*</span>
-                            )}
-                          </Label>
-                        </div>
-                      ))}
+                <div key={nr.id} className="bg-[#2D3139] rounded-xl border border-white/5 overflow-hidden">
+                  <div className="p-5 border-b border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="px-2 py-1 bg-[#FFD100]/20 text-[#FFD100] rounded text-sm font-bold">
+                        {nr.nrNumber}
+                      </div>
+                      <h3 className="font-bold">{nr.nrName}</h3>
                     </div>
-                  </CardContent>
-                </Card>
+                    <p className="text-sm text-[#8B9099] mt-1">{nr.category}</p>
+                  </div>
+                  <div className="p-5 space-y-3">
+                    {(nr.items as any[])?.map((item: any) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1D23] hover:bg-[#1A1D23]/80 transition-colors"
+                      >
+                        <Checkbox
+                          id={item.id}
+                          checked={checklistData[nr.nrNumber]?.[item.id] || false}
+                          onCheckedChange={(checked) =>
+                            handleChecklistChange(nr.nrNumber, item.id, !!checked)
+                          }
+                          className="border-white/30 data-[state=checked]:bg-[#34C759] data-[state=checked]:border-[#34C759]"
+                          data-testid={`checkbox-${item.id}`}
+                        />
+                        <Label htmlFor={item.id} className="flex-1 cursor-pointer text-white/90">
+                          {item.text}
+                          {item.required && (
+                            <span className="text-[#FF3B30] ml-1">*</span>
+                          )}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="photos">
-            <Card>
-              <CardHeader>
-                <CardTitle>Fotos da Inspeção</CardTitle>
-                <CardDescription>Registre evidências fotográficas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Camera className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Funcionalidade de upload de fotos em desenvolvimento</p>
-                  <p className="text-sm">Em breve você poderá anexar fotos às inspeções</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="bg-[#2D3139] rounded-xl border border-white/5 p-6">
+              <h2 className="font-bold text-lg mb-1">Fotos da Inspeção</h2>
+              <p className="text-sm text-[#8B9099] mb-6">Registre evidências fotográficas</p>
+              
+              <div className="text-center py-16">
+                <Camera className="h-16 w-16 mx-auto mb-4 text-[#4A4E57]" />
+                <p className="text-[#8B9099] mb-2">Funcionalidade de upload de fotos em desenvolvimento</p>
+                <p className="text-sm text-[#4A4E57]">Em breve você poderá anexar fotos às inspeções</p>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="actions">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <div className="bg-[#2D3139] rounded-xl border border-white/5 overflow-hidden">
+              <div className="p-5 border-b border-white/5 flex items-center justify-between">
                 <div>
-                  <CardTitle>Planos de Ação</CardTitle>
-                  <CardDescription>Ações corretivas para não conformidades</CardDescription>
+                  <h2 className="font-bold text-lg">Planos de Ação</h2>
+                  <p className="text-sm text-[#8B9099]">Ações corretivas para não conformidades</p>
                 </div>
                 <Button
                   onClick={() => generateAIMutation.mutate()}
                   disabled={generateAIMutation.isPending}
+                  className="bg-[#FFD100] text-[#1A1D23] hover:bg-[#E6BC00] font-bold"
                   data-testid="button-generate-ai"
                 >
                   {generateAIMutation.isPending ? (
@@ -373,66 +378,63 @@ export default function InspectionPage() {
                   )}
                   Gerar com IA
                 </Button>
-              </CardHeader>
-              <CardContent>
+              </div>
+              <div className="p-5">
                 {actionPlans.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Nenhum plano de ação ainda</p>
-                    <p className="text-sm">Clique em "Gerar com IA" para criar planos automaticamente</p>
+                  <div className="text-center py-12">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-[#4A4E57]" />
+                    <p className="text-[#8B9099] mb-2">Nenhum plano de ação ainda</p>
+                    <p className="text-sm text-[#4A4E57]">Clique em "Gerar com IA" para criar planos automaticamente</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {actionPlans.map((plan: any) => (
-                      <Card key={plan.id}>
-                        <CardContent className="pt-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge
-                                  variant={
-                                    plan.priority === "high"
-                                      ? "destructive"
-                                      : plan.priority === "medium"
-                                      ? "default"
-                                      : "secondary"
-                                  }
-                                >
-                                  {plan.priority === "high"
-                                    ? "Alta"
-                                    : plan.priority === "medium"
-                                    ? "Média"
-                                    : "Baixa"}
-                                </Badge>
-                                {plan.aiGenerated && (
-                                  <Badge variant="outline">
-                                    <Brain className="h-3 w-3 mr-1" />
-                                    IA
-                                  </Badge>
-                                )}
+                      <div key={plan.id} className="bg-[#1A1D23] rounded-xl p-4 border border-white/5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                plan.priority === "high"
+                                  ? "bg-[#FF3B30]/20 text-[#FF3B30]"
+                                  : plan.priority === "medium"
+                                  ? "bg-[#FFD100]/20 text-[#FFD100]"
+                                  : "bg-[#8B9099]/20 text-[#8B9099]"
+                              }`}>
+                                {plan.priority === "high" ? "Alta" : plan.priority === "medium" ? "Média" : "Baixa"}
                               </div>
-                              <h4 className="font-medium mb-1">{plan.issue}</h4>
-                              <p className="text-sm text-muted-foreground">{plan.recommendation}</p>
+                              {plan.aiGenerated && (
+                                <div className="px-2 py-0.5 rounded text-xs font-bold bg-white/10 text-white/70 flex items-center gap-1">
+                                  <Brain className="h-3 w-3" />
+                                  IA
+                                </div>
+                              )}
                             </div>
-                            <Badge variant={plan.status === "completed" ? "default" : "secondary"}>
-                              {plan.status === "completed" ? "Concluído" : "Pendente"}
-                            </Badge>
+                            <h4 className="font-medium mb-1">{plan.issue}</h4>
+                            <p className="text-sm text-[#8B9099]">{plan.recommendation}</p>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            plan.status === "completed" 
+                              ? "bg-[#34C759]/20 text-[#34C759]" 
+                              : "bg-[#8B9099]/20 text-[#8B9099]"
+                          }`}>
+                            {plan.status === "completed" ? "Concluído" : "Pendente"}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 
-        <div className="mt-8 pt-8 border-t">
+        <div className="mt-8 pt-8 border-t border-white/10">
           <Button
             variant="destructive"
             onClick={() => deleteMutation.mutate()}
             disabled={deleteMutation.isPending}
+            className="bg-[#FF3B30] hover:bg-[#d63129]"
             data-testid="button-delete"
           >
             <Trash2 className="h-4 w-4 mr-2" />
