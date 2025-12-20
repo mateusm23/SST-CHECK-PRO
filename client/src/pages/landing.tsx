@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Check, Camera, Smartphone, Mail, MapPin, BarChart3, ClipboardList, FileText, HardHat, Shield, AlertTriangle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Camera, Smartphone, Mail, MapPin, BarChart3, ClipboardList, FileText, HardHat, Shield, AlertTriangle, Lock, Loader2, X } from "lucide-react";
 
 const features = [
   {
@@ -64,6 +64,39 @@ const nrs = [
 
 export default function LandingPage() {
   const fadeRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError("");
+
+    try {
+      const response = await fetch("/api/auth/admin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: adminEmail, password: adminPassword }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setLoginError(data.message || "Erro ao fazer login");
+        return;
+      }
+
+      window.location.href = "/dashboard";
+    } catch (error) {
+      setLoginError("Erro de conexão. Tente novamente.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -540,20 +573,111 @@ export default function LandingPage() {
             <p className="text-[#8B9099] text-sm">
               © 2025 SST Check Pro. Todos os direitos reservados.
             </p>
-            <div className="flex gap-3">
-              {["in", "ig", "yt"].map((social) => (
-                <a
-                  key={social}
-                  href="#"
-                  className="w-10 h-10 bg-[#2D3139] rounded-lg flex items-center justify-center text-white font-bold text-sm hover:bg-[#FFD100] hover:text-[#1A1D23] transition-all"
-                >
-                  {social}
-                </a>
-              ))}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowAdminModal(true)}
+                className="text-[#4A4E57] hover:text-[#8B9099] text-xs transition-colors"
+                data-testid="button-admin-login"
+              >
+                Admin
+              </button>
+              <div className="flex gap-3">
+                {["in", "ig", "yt"].map((social) => (
+                  <a
+                    key={social}
+                    href="#"
+                    className="w-10 h-10 bg-[#2D3139] rounded-lg flex items-center justify-center text-white font-bold text-sm hover:bg-[#FFD100] hover:text-[#1A1D23] transition-all"
+                  >
+                    {social}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Admin Login Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+          <div className="bg-[#1A1D23] rounded-2xl max-w-md w-full p-6 border border-[#2D3139] relative">
+            <button
+              onClick={() => {
+                setShowAdminModal(false);
+                setLoginError("");
+                setAdminEmail("");
+                setAdminPassword("");
+              }}
+              className="absolute top-4 right-4 text-[#8B9099] hover:text-white transition-colors"
+              data-testid="button-close-admin-modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-[#FFD100] rounded-lg flex items-center justify-center">
+                <Lock className="w-5 h-5 text-[#1A1D23]" />
+              </div>
+              <div>
+                <h2 className="text-white font-bold text-lg">Acesso Admin</h2>
+                <p className="text-[#8B9099] text-sm">Login para testes</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm text-[#8B9099] mb-2">Email</label>
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className="w-full bg-[#2D3139] border border-[#4A4E57] rounded-lg px-4 py-3 text-white placeholder-[#6b7280] focus:outline-none focus:border-[#FFD100]"
+                  placeholder="admin@sstcheckpro.com"
+                  required
+                  data-testid="input-admin-email"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#8B9099] mb-2">Senha</label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full bg-[#2D3139] border border-[#4A4E57] rounded-lg px-4 py-3 text-white placeholder-[#6b7280] focus:outline-none focus:border-[#FFD100]"
+                  placeholder="Senha de admin"
+                  required
+                  data-testid="input-admin-password"
+                />
+              </div>
+
+              {loginError && (
+                <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg text-sm">
+                  {loginError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full bg-[#FFD100] text-[#1A1D23] font-bold py-3 rounded-lg hover:bg-[#E6BC00] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                data-testid="button-admin-submit"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    Entrar como Admin
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

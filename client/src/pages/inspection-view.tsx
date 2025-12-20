@@ -11,8 +11,9 @@ import {
   Printer,
   FileText,
   AlertTriangle,
-  Camera,
-  Loader2
+  Loader2,
+  X,
+  Minus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
@@ -102,7 +103,6 @@ export default function InspectionViewPage() {
 
   const responses: Record<number, ItemResponse> = (inspection as any)?.checklistData || {};
 
-  // Calculate stats
   let okCount = 0, ncCount = 0, naCount = 0;
   Object.values(responses).forEach((r) => {
     if (r.response === "ok") okCount++;
@@ -114,7 +114,6 @@ export default function InspectionViewPage() {
     ? Math.round((okCount / (okCount + ncCount)) * 100) || 0
     : 0;
 
-  // Get non-conformities with their section and item info
   const nonConformities: { index: number; sectionName: string; itemText: string; data: ItemResponse }[] = [];
   let globalIndex = 0;
   SAMPLE_SECTIONS.forEach((section) => {
@@ -147,40 +146,40 @@ export default function InspectionViewPage() {
 
     try {
       const element = pdfRef.current;
+      
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
+        width: 794,
+        windowWidth: 794,
       });
 
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const imgData = canvas.toDataURL("image/png");
       
-      // Handle multi-page PDFs
-      const pageHeight = pdfHeight * (imgWidth / pdfWidth);
       let heightLeft = imgHeight;
       let position = 0;
-      
-      pdf.addImage(imgData, "PNG", imgX, 0, imgWidth * ratio, imgHeight * ratio);
-      heightLeft -= pageHeight;
+      let pageNum = 0;
       
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", imgX, position * ratio, imgWidth * ratio, imgHeight * ratio);
-        heightLeft -= pageHeight;
+        if (pageNum > 0) {
+          pdf.addPage();
+        }
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        position -= pdfHeight;
+        pageNum++;
       }
 
       const fileName = `inspecao-sst-${inspectionId.toString().padStart(4, "0")}-${new Date().toISOString().split("T")[0]}.pdf`;
@@ -219,7 +218,6 @@ export default function InspectionViewPage() {
         }
       }
     } else {
-      // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(shareData.text + "\n\n" + shareData.url);
         toast({ title: "Link copiado!", description: "Cole em qualquer app para compartilhar" });
@@ -239,12 +237,16 @@ export default function InspectionViewPage() {
     });
   };
 
+  const formatDateShort = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("pt-BR");
+  };
+
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
-      case "alta": return { text: "Alta - Risco Grave", color: "text-red-600" };
-      case "media": return { text: "Média - Risco Moderado", color: "text-orange-600" };
-      case "baixa": return { text: "Baixa - Risco Menor", color: "text-green-600" };
-      default: return { text: "Não definida", color: "text-gray-500" };
+      case "alta": return { text: "ALTA", color: "#dc2626" };
+      case "media": return { text: "MÉDIA", color: "#ea580c" };
+      case "baixa": return { text: "BAIXA", color: "#16a34a" };
+      default: return { text: "-", color: "#6b7280" };
     }
   };
 
@@ -264,10 +266,10 @@ export default function InspectionViewPage() {
   const inspData = inspection as any;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
+    <div className="min-h-screen bg-[#e5e5e5]">
       {/* Header - Hidden in print */}
       <header className="bg-[#1a1d23] text-white p-4 sticky top-0 z-50 print:hidden">
-        <div className="max-w-[800px] mx-auto flex items-center justify-between">
+        <div className="max-w-[800px] mx-auto flex items-center justify-between gap-2">
           <Link href="/dashboard">
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" data-testid="button-back">
               <ArrowLeft className="h-5 w-5" />
@@ -289,7 +291,7 @@ export default function InspectionViewPage() {
           <Button 
             onClick={handleDownloadPDF}
             disabled={isGeneratingPDF}
-            className="bg-blue-500 text-white hover:bg-blue-600"
+            className="bg-blue-600 text-white hover:bg-blue-700"
             data-testid="button-download"
           >
             {isGeneratingPDF ? (
@@ -301,7 +303,7 @@ export default function InspectionViewPage() {
           </Button>
           <Button 
             onClick={handleShare}
-            className="bg-green-500 text-white hover:bg-green-600"
+            className="bg-green-600 text-white hover:bg-green-700"
             data-testid="button-share"
           >
             <Share2 className="w-4 h-4 mr-2" />
@@ -310,7 +312,7 @@ export default function InspectionViewPage() {
           <Button 
             onClick={handlePrint}
             variant="outline"
-            className="border-gray-300"
+            className="border-gray-400"
             data-testid="button-print"
           >
             <Printer className="w-4 h-4 mr-2" />
@@ -319,197 +321,381 @@ export default function InspectionViewPage() {
         </div>
       </div>
 
-      {/* PDF Content */}
-      <div ref={pdfRef} className="max-w-[800px] mx-auto bg-white print:max-w-none print:mx-0">
-        {/* PDF Header */}
-        <div className="bg-gradient-to-r from-[#1a1d23] to-[#2d3139] text-white p-6 print:p-8">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#FFD100] rounded-xl flex items-center justify-center">
-                <Check className="w-6 h-6 text-[#1a1d23] stroke-[3]" />
+      {/* PDF Content - Fixed A4 Width (794px = 210mm at 96dpi) */}
+      <div className="flex justify-center px-2 print:px-0">
+        <div 
+          ref={pdfRef} 
+          className="bg-white shadow-lg print:shadow-none"
+          style={{ 
+            width: "794px", 
+            minHeight: "1123px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+          }}
+        >
+          {/* PDF Header - Full Width */}
+          <div style={{ backgroundColor: "#1a1d23", padding: "24px 32px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ 
+                  width: "48px", 
+                  height: "48px", 
+                  backgroundColor: "#FFD100", 
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <Check style={{ width: "28px", height: "28px", color: "#1a1d23", strokeWidth: 3 }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "white" }}>
+                    SST<span style={{ color: "#FFD100" }}>Check</span>Pro
+                  </div>
+                  <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)" }}>
+                    Relatório de Inspeção de Segurança
+                  </div>
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", textTransform: "uppercase" }}>
+                  Inspeção N.
+                </div>
+                <div style={{ fontSize: "32px", fontWeight: "bold", color: "#FFD100" }}>
+                  #{inspectionId.toString().padStart(4, "0")}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Yellow Stripe */}
+          <div style={{ 
+            backgroundColor: "#FFD100", 
+            padding: "12px 32px",
+            textAlign: "center"
+          }}>
+            <div style={{ 
+              fontSize: "14px", 
+              fontWeight: "bold", 
+              color: "#1a1d23",
+              textTransform: "uppercase",
+              letterSpacing: "1px"
+            }}>
+              NR 18 - Inspeção de Canteiro de Obras
+            </div>
+          </div>
+
+          {/* Info Section */}
+          <div style={{ padding: "24px 32px", borderBottom: "2px solid #e5e5e5" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              <div>
+                <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>
+                  Obra / Local
+                </div>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "#111" }}>
+                  {inspData?.title || "Não informado"}
+                </div>
               </div>
               <div>
-                <div className="text-xl font-bold">
-                  SST<span className="text-[#FFD100]">Check</span>Pro
+                <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>
+                  Data da Inspeção
                 </div>
-                <div className="text-sm opacity-70">Relatório de Inspeção</div>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "#111" }}>
+                  {formatDate(inspData?.completedAt || inspData?.createdAt)}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>
+                  Inspetor Responsável
+                </div>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "#111" }}>
+                  {inspData?.inspectorName || "Não informado"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>
+                  Endereço / Localização
+                </div>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "#111" }}>
+                  {inspData?.location || "Não informado"}
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-xs opacity-70">Inspeção Nº</div>
-              <div className="text-2xl font-bold text-[#FFD100]">#{inspectionId.toString().padStart(4, "0")}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Title Bar */}
-        <div className="bg-[#FFD100] text-[#1a1d23] py-3 px-6 text-center font-bold uppercase tracking-wide">
-          NR 18 - Inspeção de Canteiro de Obras
-        </div>
-
-        {/* Body */}
-        <div className="p-6">
-          {/* Info Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b-2 border-gray-200">
-            <div>
-              <label className="text-xs text-gray-500 uppercase tracking-wide">Obra / Local</label>
-              <p className="font-semibold text-gray-900">{inspData?.title || "Não informado"}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 uppercase tracking-wide">Data da Inspeção</label>
-              <p className="font-semibold text-gray-900">{formatDate(inspData?.completedAt || inspData?.createdAt)}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 uppercase tracking-wide">Inspetor Responsável</label>
-              <p className="font-semibold text-gray-900">{inspData?.inspectorName || "Não informado"}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 uppercase tracking-wide">Local / Endereço</label>
-              <p className="font-semibold text-gray-900">{inspData?.location || "Não informado"}</p>
-            </div>
           </div>
 
-          {/* Summary Stats */}
-          <div className="grid grid-cols-4 gap-3 mb-6">
-            <div className="text-center p-4 rounded-xl bg-gray-100">
-              <div className="text-2xl font-bold text-gray-900">{totalAnswered}</div>
-              <div className="text-xs text-gray-500 uppercase">Total</div>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-green-50">
-              <div className="text-2xl font-bold text-green-600">{okCount}</div>
-              <div className="text-xs text-green-700 uppercase">Conforme</div>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-red-50">
-              <div className="text-2xl font-bold text-red-600">{ncCount}</div>
-              <div className="text-xs text-red-700 uppercase">Não Conf.</div>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-blue-50">
-              <div className="text-2xl font-bold text-blue-600">{conformityScore}%</div>
-              <div className="text-xs text-blue-700 uppercase">Score</div>
+          {/* Stats Section */}
+          <div style={{ padding: "20px 32px", backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e5e5" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+              <div style={{ 
+                backgroundColor: "white", 
+                padding: "16px", 
+                borderRadius: "8px",
+                textAlign: "center",
+                border: "1px solid #e5e7eb"
+              }}>
+                <div style={{ fontSize: "28px", fontWeight: "bold", color: "#111" }}>{totalAnswered}</div>
+                <div style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase" }}>Total Itens</div>
+              </div>
+              <div style={{ 
+                backgroundColor: "#dcfce7", 
+                padding: "16px", 
+                borderRadius: "8px",
+                textAlign: "center",
+                border: "1px solid #bbf7d0"
+              }}>
+                <div style={{ fontSize: "28px", fontWeight: "bold", color: "#16a34a" }}>{okCount}</div>
+                <div style={{ fontSize: "11px", color: "#15803d", textTransform: "uppercase" }}>Conforme</div>
+              </div>
+              <div style={{ 
+                backgroundColor: "#fef2f2", 
+                padding: "16px", 
+                borderRadius: "8px",
+                textAlign: "center",
+                border: "1px solid #fecaca"
+              }}>
+                <div style={{ fontSize: "28px", fontWeight: "bold", color: "#dc2626" }}>{ncCount}</div>
+                <div style={{ fontSize: "11px", color: "#b91c1c", textTransform: "uppercase" }}>Não Conforme</div>
+              </div>
+              <div style={{ 
+                backgroundColor: "#1a1d23", 
+                padding: "16px", 
+                borderRadius: "8px",
+                textAlign: "center"
+              }}>
+                <div style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD100" }}>{conformityScore}%</div>
+                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.8)", textTransform: "uppercase" }}>Score</div>
+              </div>
             </div>
           </div>
 
           {/* Non-Conformities Section */}
           {nonConformities.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 rounded-xl border-2 border-red-200">
-              <h3 className="text-red-700 font-bold mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Não Conformidades Identificadas ({ncCount})
-              </h3>
+            <div style={{ padding: "24px 32px", borderBottom: "2px solid #e5e5e5" }}>
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: "8px", 
+                marginBottom: "16px",
+                padding: "12px 16px",
+                backgroundColor: "#fef2f2",
+                borderRadius: "8px",
+                border: "1px solid #fecaca"
+              }}>
+                <AlertTriangle style={{ width: "20px", height: "20px", color: "#dc2626" }} />
+                <span style={{ fontSize: "14px", fontWeight: "bold", color: "#dc2626" }}>
+                  NÃO CONFORMIDADES IDENTIFICADAS ({ncCount})
+                </span>
+              </div>
               
-              <div className="space-y-4">
-                {nonConformities.map((nc) => (
-                  <div key={nc.index} className="bg-white rounded-lg p-4 border-l-4 border-red-500">
-                    <div className="font-semibold text-gray-900 mb-1">{nc.itemText}</div>
-                    <div className="text-sm text-gray-500 mb-2">{nc.sectionName}</div>
-                    
-                    {nc.data.observation && (
-                      <p className="text-sm text-gray-600 italic mb-2">"{nc.data.observation}"</p>
-                    )}
-                    
-                    {nc.data.photos && nc.data.photos.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {nc.data.photos.map((photo, i) => (
-                          <img 
-                            key={i} 
-                            src={photo} 
-                            alt="" 
-                            className="w-20 h-16 object-cover rounded border"
-                          />
-                        ))}
+              {nonConformities.map((nc, idx) => (
+                <div 
+                  key={nc.index} 
+                  style={{ 
+                    marginBottom: "12px",
+                    padding: "16px",
+                    backgroundColor: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderLeft: "4px solid #dc2626",
+                    borderRadius: "4px"
+                  }}
+                >
+                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <div style={{ 
+                      width: "24px", 
+                      height: "24px", 
+                      backgroundColor: "#dc2626", 
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0
+                    }}>
+                      <span style={{ color: "white", fontSize: "12px", fontWeight: "bold" }}>{idx + 1}</span>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "#111", marginBottom: "4px" }}>
+                        {nc.itemText}
                       </div>
-                    )}
-                    
-                    {nc.data.actionPlan && (nc.data.actionPlan.responsible || nc.data.actionPlan.deadline || nc.data.actionPlan.priority) && (
-                      <div className="mt-2 p-3 bg-orange-50 rounded border border-orange-200">
-                        <div className="text-xs font-bold text-orange-700 mb-2">PLANO DE AÇÃO</div>
-                        <div className="grid grid-cols-3 gap-2 text-sm">
-                          <div>
-                            <span className="text-gray-500">Responsável:</span>
-                            <p className="font-medium">{nc.data.actionPlan.responsible || "-"}</p>
+                      <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "8px" }}>
+                        {nc.sectionName}
+                      </div>
+                      
+                      {nc.data.observation && (
+                        <div style={{ 
+                          fontSize: "12px", 
+                          color: "#374151", 
+                          fontStyle: "italic",
+                          padding: "8px 12px",
+                          backgroundColor: "#f9fafb",
+                          borderRadius: "4px",
+                          marginBottom: "8px"
+                        }}>
+                          "{nc.data.observation}"
+                        </div>
+                      )}
+                      
+                      {nc.data.actionPlan && (nc.data.actionPlan.responsible || nc.data.actionPlan.deadline) && (
+                        <div style={{ 
+                          padding: "12px",
+                          backgroundColor: "#fffbeb",
+                          border: "1px solid #fde68a",
+                          borderRadius: "4px"
+                        }}>
+                          <div style={{ fontSize: "10px", fontWeight: "bold", color: "#92400e", marginBottom: "8px" }}>
+                            PLANO DE AÇÃO
                           </div>
-                          <div>
-                            <span className="text-gray-500">Prazo:</span>
-                            <p className="font-medium">
-                              {nc.data.actionPlan.deadline 
-                                ? new Date(nc.data.actionPlan.deadline).toLocaleDateString("pt-BR")
-                                : "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Prioridade:</span>
-                            <p className={`font-medium ${getPriorityLabel(nc.data.actionPlan.priority).color}`}>
-                              {getPriorityLabel(nc.data.actionPlan.priority).text}
-                            </p>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                            <div>
+                              <div style={{ fontSize: "10px", color: "#6b7280" }}>Responsável</div>
+                              <div style={{ fontSize: "12px", fontWeight: "500" }}>{nc.data.actionPlan.responsible || "-"}</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: "10px", color: "#6b7280" }}>Prazo</div>
+                              <div style={{ fontSize: "12px", fontWeight: "500" }}>
+                                {nc.data.actionPlan.deadline ? formatDateShort(nc.data.actionPlan.deadline) : "-"}
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: "10px", color: "#6b7280" }}>Prioridade</div>
+                              <div style={{ 
+                                fontSize: "12px", 
+                                fontWeight: "bold",
+                                color: getPriorityLabel(nc.data.actionPlan.priority).color
+                              }}>
+                                {getPriorityLabel(nc.data.actionPlan.priority).text}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           )}
 
-          {/* All Items by Section */}
-          {SAMPLE_SECTIONS.map((section, sectionIndex) => {
-            let startIndex = 0;
-            for (let i = 0; i < sectionIndex; i++) {
-              startIndex += SAMPLE_SECTIONS[i].items.length;
-            }
+          {/* Checklist Sections */}
+          <div style={{ padding: "24px 32px" }}>
+            <div style={{ fontSize: "14px", fontWeight: "bold", color: "#111", marginBottom: "16px" }}>
+              CHECKLIST COMPLETO
+            </div>
+            
+            {SAMPLE_SECTIONS.map((section, sectionIndex) => {
+              let startIndex = 0;
+              for (let i = 0; i < sectionIndex; i++) {
+                startIndex += SAMPLE_SECTIONS[i].items.length;
+              }
 
-            return (
-              <div key={section.name} className="mb-4 print:break-inside-avoid">
-                <div className="bg-[#1a1d23] text-white px-4 py-3 rounded-t-lg font-semibold text-sm flex items-center gap-2">
-                  <span className="w-1 h-4 bg-[#FFD100] rounded-full" />
-                  {section.name}
-                </div>
-                <div className="border border-gray-200 border-t-0 rounded-b-lg divide-y divide-gray-100">
-                  {section.items.map((item, itemIndex) => {
-                    const idx = startIndex + itemIndex;
-                    const itemResponse = responses[idx];
-                    const status = itemResponse?.response;
+              return (
+                <div key={section.name} style={{ marginBottom: "16px" }}>
+                  <div style={{ 
+                    backgroundColor: "#1a1d23", 
+                    color: "white",
+                    padding: "10px 16px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}>
+                    <div style={{ width: "4px", height: "16px", backgroundColor: "#FFD100", borderRadius: "2px" }} />
+                    {section.name}
+                  </div>
+                  <div style={{ border: "1px solid #e5e7eb", borderTop: "none" }}>
+                    {section.items.map((item, itemIndex) => {
+                      const idx = startIndex + itemIndex;
+                      const itemResponse = responses[idx];
+                      const status = itemResponse?.response;
 
-                    return (
-                      <div key={idx} className="flex items-start gap-3 p-3">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm ${
-                          status === "ok" ? "bg-green-500" :
-                          status === "nc" ? "bg-red-500" :
-                          status === "na" ? "bg-gray-400" :
-                          "bg-gray-200 text-gray-400"
-                        }`}>
-                          {status === "ok" ? "✓" : status === "nc" ? "✗" : status === "na" ? "-" : "?"}
+                      return (
+                        <div 
+                          key={idx} 
+                          style={{ 
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            borderBottom: itemIndex < section.items.length - 1 ? "1px solid #f3f4f6" : "none",
+                            backgroundColor: itemIndex % 2 === 0 ? "#ffffff" : "#fafafa"
+                          }}
+                        >
+                          <div style={{ 
+                            width: "24px", 
+                            height: "24px", 
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: status === "ok" ? "#16a34a" : 
+                                           status === "nc" ? "#dc2626" : 
+                                           status === "na" ? "#9ca3af" : "#e5e7eb",
+                            flexShrink: 0
+                          }}>
+                            {status === "ok" && <Check style={{ width: "14px", height: "14px", color: "white", strokeWidth: 3 }} />}
+                            {status === "nc" && <X style={{ width: "14px", height: "14px", color: "white", strokeWidth: 3 }} />}
+                            {status === "na" && <Minus style={{ width: "14px", height: "14px", color: "white", strokeWidth: 3 }} />}
+                            {!status && <span style={{ color: "#9ca3af", fontSize: "10px" }}>?</span>}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: "12px", color: "#374151" }}>{item}</div>
+                            {itemResponse?.observation && (
+                              <div style={{ fontSize: "10px", color: "#6b7280", fontStyle: "italic", marginTop: "2px" }}>
+                                {itemResponse.observation}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ 
+                            fontSize: "10px", 
+                            fontWeight: "600",
+                            color: status === "ok" ? "#16a34a" : 
+                                   status === "nc" ? "#dc2626" : 
+                                   status === "na" ? "#6b7280" : "#9ca3af",
+                            width: "40px",
+                            textAlign: "right"
+                          }}>
+                            {status === "ok" ? "CONF" : status === "nc" ? "NC" : status === "na" ? "N/A" : "-"}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-gray-800 text-sm">{item}</p>
-                          {itemResponse?.observation && (
-                            <p className="text-xs text-gray-500 italic mt-1">"{itemResponse.observation}"</p>
-                          )}
-                          {itemResponse?.photos && itemResponse.photos.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-blue-600">
-                              <Camera className="w-3 h-3" />
-                              {itemResponse.photos.length} foto(s)
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t-2 border-gray-200 text-center">
-            <div className="mb-6">
-              <div className="w-48 border-b border-gray-400 mx-auto mb-2" />
-              <p className="font-semibold text-gray-900">{inspData?.inspectorName || "Responsável"}</p>
-              <p className="text-sm text-gray-500">Técnico de Segurança do Trabalho</p>
+          <div style={{ 
+            padding: "32px", 
+            borderTop: "2px solid #e5e5e5",
+            marginTop: "auto"
+          }}>
+            <div style={{ textAlign: "center", marginBottom: "24px" }}>
+              <div style={{ 
+                width: "200px", 
+                borderBottom: "1px solid #374151", 
+                margin: "0 auto 8px" 
+              }} />
+              <div style={{ fontSize: "14px", fontWeight: "600", color: "#111" }}>
+                {inspData?.inspectorName || "Responsável"}
+              </div>
+              <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                Técnico de Segurança do Trabalho
+              </div>
             </div>
-            <p className="text-xs text-gray-400">
-              Relatório gerado em {formatDate(new Date().toISOString())} via SST Check Pro
-            </p>
+            <div style={{ 
+              textAlign: "center", 
+              fontSize: "10px", 
+              color: "#9ca3af",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "8px"
+            }}>
+              <span>Relatório gerado em {formatDate(new Date().toISOString())}</span>
+              <span>|</span>
+              <span style={{ fontWeight: "600" }}>SST Check Pro</span>
+            </div>
           </div>
         </div>
       </div>
@@ -519,7 +705,7 @@ export default function InspectionViewPage() {
         <Link href="/dashboard">
           <Button className="w-full bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00] font-bold py-4" data-testid="button-new">
             <FileText className="w-4 h-4 mr-2" />
-            Nova Inspeção
+            Voltar ao Dashboard
           </Button>
         </Link>
       </div>
@@ -529,8 +715,7 @@ export default function InspectionViewPage() {
         @media print {
           body { background: white !important; }
           .print\\:hidden { display: none !important; }
-          .print\\:break-inside-avoid { break-inside: avoid; }
-          @page { margin: 1cm; }
+          @page { margin: 0; size: A4; }
         }
       `}</style>
     </div>
