@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useRoute, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -13,9 +13,11 @@ import {
   AlertTriangle,
   Loader2,
   X,
-  Minus
+  Minus,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -91,14 +93,28 @@ const SAMPLE_SECTIONS = [
 
 export default function InspectionViewPage() {
   const [, params] = useRoute("/inspection/:id/view");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const pdfRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const inspectionId = params?.id ? parseInt(params.id) : 0;
 
   const { data: inspection, isLoading } = useQuery({
     queryKey: ["/api/inspections", inspectionId],
     enabled: !!inspectionId,
+  });
+
+  const deleteInspectionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", `/api/inspections/${inspectionId}`, {});
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+      toast({ title: "Sucesso", description: "Inspeção deletada com sucesso" });
+      setLocation("/dashboard");
+    },
   });
 
   const responses: Record<number, ItemResponse> = (inspection as any)?.checklistData || {};
@@ -267,6 +283,32 @@ export default function InspectionViewPage() {
 
   return (
     <div className="min-h-screen bg-[#e5e5e5]">
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-red-500" />
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-gray-600" data-testid="button-close-modal">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Deletar Inspeção?</h2>
+            <p className="text-gray-600 mb-6">Essa ação não pode ser desfeita. Todos os dados da inspeção serão permanentemente removidos.</p>
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={() => setShowDeleteModal(false)} className="flex-1" data-testid="button-cancel-modal">
+                Cancelar
+              </Button>
+              <Button onClick={() => deleteInspectionMutation.mutate()} disabled={deleteInspectionMutation.isPending} className="flex-1 bg-red-500 text-white hover:bg-red-600" data-testid="button-confirm-modal">
+                {deleteInspectionMutation.isPending ? "Deletando..." : "Deletar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header - Hidden in print */}
       <header className="bg-[#1a1d23] text-white p-4 sticky top-0 z-50 print:hidden">
         <div className="max-w-[800px] mx-auto flex items-center justify-between gap-2">
@@ -281,7 +323,9 @@ export default function InspectionViewPage() {
               SST Check Pro
             </h1>
           </div>
-          <div className="w-9" />
+          <Button variant="ghost" size="icon" onClick={() => setShowDeleteModal(true)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20" data-testid="button-delete">
+            <Trash2 className="h-5 w-5" />
+          </Button>
         </div>
       </header>
 

@@ -12,7 +12,9 @@ import {
   CheckCircle2, 
   Camera,
   X,
-  Loader2
+  Loader2,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -116,6 +118,7 @@ export default function InspectionPage() {
   });
 
   const [responses, setResponses] = useState<Record<number, ItemResponse>>({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: inspection, isLoading } = useQuery({
     queryKey: ["/api/inspections", inspectionId],
@@ -191,6 +194,18 @@ export default function InspectionPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/inspections", inspectionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       toast({ title: "Concluída", description: "Inspeção finalizada com sucesso" });
+      setLocation("/dashboard");
+    },
+  });
+
+  const deleteInspectionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", `/api/inspections/${inspectionId}`, {});
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+      toast({ title: "Sucesso", description: "Inspeção deletada com sucesso" });
       setLocation("/dashboard");
     },
   });
@@ -289,6 +304,32 @@ export default function InspectionPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-red-500" />
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-gray-600" data-testid="button-close-modal">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Deletar Inspeção?</h2>
+            <p className="text-gray-600 mb-6">Essa ação não pode ser desfeita. Todos os dados da inspeção serão permanentemente removidos.</p>
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={() => setShowDeleteModal(false)} className="flex-1" data-testid="button-cancel-modal">
+                Cancelar
+              </Button>
+              <Button onClick={() => deleteInspectionMutation.mutate()} disabled={deleteInspectionMutation.isPending} className="flex-1 bg-red-500 text-white hover:bg-red-600" data-testid="button-confirm-modal">
+                {deleteInspectionMutation.isPending ? "Deletando..." : "Deletar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-[#1a1d23] text-white p-4 text-center sticky top-0 z-50">
         <div className="flex items-center justify-between max-w-[600px] mx-auto">
@@ -304,16 +345,21 @@ export default function InspectionPage() {
             </h1>
             <p className="text-xs opacity-80">Checklist de Segurança do Trabalho</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-            className="text-white hover:bg-white/10"
-            data-testid="button-save"
-          >
-            {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setShowDeleteModal(true)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20" data-testid="button-delete">
+              <Trash2 className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+              className="text-white hover:bg-white/10"
+              data-testid="button-save"
+            >
+              {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
       </header>
 
