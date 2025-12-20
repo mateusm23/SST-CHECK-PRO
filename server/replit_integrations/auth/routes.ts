@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { authStorage } from "./storage";
-import { isAuthenticated } from "./replitAuth";
+import { isAuthenticated } from "./googleAuth";
 
 const ADMIN_USER_ID = "admin-test-user";
 
