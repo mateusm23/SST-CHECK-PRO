@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SST Check Pro - Checklist Digital de Segurança do Trabalho em Obras</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --yellow-safety: #FFD100;
+            --yellow-dark: #E6BC00;
+            --orange-alert: #FF6B35;
+            --dark-steel: #1A1D23;
+            --steel-gray: #2D3139;
+            --concrete: #4A4E57;
+            --light-concrete: #8B9099;
+            --white: #FFFFFF;
+            --green-ok: #34C759;
+            --red-alert: #FF3B30;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Barlow', sans-serif;
+            background: var(--dark-steel);
+            color: var(--white);
+            overflow-x: hidden;
+        }
+
+        /* Diagonal stripes pattern */
+        .safety-stripes {
+            background: repeating-linear-gradient(
+                45deg,
+                var(--yellow-safety),
+                var(--yellow-safety) 10px,
+                var(--dark-steel) 10px,
+                var(--dark-steel) 20px
+            );
+            height: 8px;
+            width: 100%;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 8px;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(26, 29, 35, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--yellow-safety);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .logo-icon::before {
+            content: '✓';
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-steel);
+        }
+
+        .logo-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+        }
+
+        .logo-text span {
+            color: var(--yellow-safety);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--yellow-safety);
+        }
+
+        .btn-primary {
+            background: var(--yellow-safety);
+            color: var(--dark-steel);
+            padding: 12px 28px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary:hover {
+            background: var(--yellow-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 209, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            padding: 12px 28px;
+            border: 2px solid var(--white);
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--white);
+            color: var(--dark-steel);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            padding: 120px 5% 80px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--steel-gray) 0%, transparent 70%);
+            clip-path: polygon(30% 0, 100% 0, 100% 100%, 0% 100%);
+            z-index: -1;
+        }
+
+        .hero-content {
+            animation: slideInLeft 1s ease;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 209, 0, 0.15);
+            border: 1px solid var(--yellow-safety);
+            color: var(--yellow-safety);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .badge::before {
+            content: '🏗️';
+        }
+
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4.5rem;
+            line-height: 1;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .hero h1 span {
+            color: var(--yellow-safety);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--light-concrete);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--steel-gray);
+        }
+
+        .stat {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: var(--yellow-safety);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--light-concrete);
+        }
+
+        /* Phone Mockup */
+        .hero-visual {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            animation: slideInRight 1s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .phone-mockup {
+            width: 320px;
+            height: 650px;
+            background: var(--dark-steel);
+            border-radius: 40px;
+            border: 4px solid var(--steel-gray);
+            padding: 12px;
+            position: relative;
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.5);
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            border-radius: 32px;
+            overflow: hidden;
+        }
+
+        .phone-header {
+            background: var(--yellow-safety);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .phone-header-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--dark-steel);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--yellow-safety);
+            font-weight: 700;
+        }
+
+        .phone-header-text {
+            color: var(--dark-steel);
+        }
+
+        .phone-header-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .phone-header-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .phone-content {
+            padding: 16px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--concrete);
+            transition: all 0.3s;
+        }
+
+        .checklist-item.conforme {
+            border-left-color: var(--green-ok);
+        }
+
+        .checklist-item.nao-conforme {
+            border-left-color: var(--red-alert);
+        }
+
+        .checklist-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--concrete);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .checklist-item.conforme .checklist-checkbox {
+            background: var(--green-ok);
+            border-color: var(--green-ok);
+            color: white;
+        }
+
+        .checklist-item.nao-conforme .checklist-checkbox {
+            background: var(--red-alert);
+            border-color: var(--red-alert);
+            color: white;
+        }
+
+        .checklist-text {
+            flex: 1;
+            color: var(--dark-steel);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .checklist-camera {
+            width: 32px;
+            height: 32px;
+            background: var(--yellow-safety);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .floating-badge {
+            position: absolute;
+            background: var(--white);
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating-badge.badge-1 {
+            top: 15%;
+            left: -60px;
+            animation-delay: 0s;
+        }
+
+        .floating-badge.badge-2 {
+            bottom: 25%;
+            right: -80px;
+            animation-delay: 1.5s;
+        }
+
+        .floating-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .floating-icon.green { background: rgba(52, 199, 89, 0.15); }
+        .floating-icon.orange { background: rgba(255, 107, 53, 0.15); }
+
+        .floating-text {
+            color: var(--dark-steel);
+        }
+
+        .floating-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .floating-subtitle {
+            font-size: 0.75rem;
+            color: var(--concrete);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 5%;
+            background: var(--steel-gray);
+            position: relative;
+        }
+
+        .features::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 4rem;
+            position: relative;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: var(--yellow-safety);
+            color: var(--dark-steel);
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .section-header p {
+            color: var(--light-concrete);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            position: relative;
+        }
+
+        .feature-card {
+            background: var(--dark-steel);
+            border-radius: 16px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--yellow-safety);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--yellow-safety);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 209, 0, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: var(--light-concrete);
+            line-height: 1.6;
+        }
+
+        /* How it Works */
+        .how-it-works {
+            padding: 100px 5%;
+            background: var(--dark-steel);
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            position: relative;
+        }
+
+        .steps-container::before {
+            content: '';
+            position: absolute;
+            top: 50px;
+            left: 12.5%;
+            right: 12.5%;
+            height: 4px;
+            background: var(--steel-gray);
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+            padding: 0 1rem;
+        }
+
+        .step-number {
+            width: 100px;
+            height: 100px;
+            background: var(--steel-gray);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s;
+        }
+
+        .step:hover .step-number {
+            background: var(--yellow-safety);
+            transform: scale(1.1);
+        }
+
+        .step-number span {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: var(--yellow-safety);
+            transition: color 0.3s;
+        }
+
+        .step:hover .step-number span {
+            color: var(--dark-steel);
+        }
+
+        .step h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step p {
+            color: var(--light-concrete);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Benefits Section */
+        .benefits {
+            padding: 100px 5%;
+            background: linear-gradient(135deg, var(--steel-gray) 0%, var(--dark-steel) 100%);
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .benefits-content h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+        }
+
+        .benefit-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+
+        .benefit-item:hover {
+            background: rgba(255, 209, 0, 0.05);
+            border-color: var(--yellow-safety);
+        }
+
+        .benefit-check {
+            width: 32px;
+            height: 32px;
+            background: var(--yellow-safety);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .benefit-check::after {
+            content: '✓';
+            color: var(--dark-steel);
+            font-weight: 700;
+        }
+
+        .benefit-item h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .benefit-item p {
+            color: var(--light-concrete);
+            font-size: 0.9rem;
+        }
+
+        .benefits-visual {
+            position: relative;
+        }
+
+        .report-preview {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+            transform: perspective(1000px) rotateY(-5deg);
+        }
+
+        .report-header {
+            background: var(--dark-steel);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .report-logo {
+            width: 48px;
+            height: 48px;
+            background: var(--yellow-safety);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--dark-steel);
+        }
+
+        .report-title-section {
+            flex: 1;
+        }
+
+        .report-title {
+            color: var(--white);
+            font-weight: 700;
+        }
+
+        .report-subtitle {
+            color: var(--light-concrete);
+            font-size: 0.85rem;
+        }
+
+        .report-date {
+            color: var(--yellow-safety);
+            font-weight: 600;
+        }
+
+        .report-body {
+            padding: 24px;
+        }
+
+        .report-section {
+            margin-bottom: 20px;
+        }
+
+        .report-section-title {
+            color: var(--dark-steel);
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .report-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .report-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .report-status.ok { background: var(--green-ok); }
+        .report-status.alert { background: var(--red-alert); }
+
+        .report-item-text {
+            flex: 1;
+            color: var(--dark-steel);
+            font-size: 0.85rem;
+        }
+
+        .report-item-badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .report-item-badge.ok {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--green-ok);
+        }
+
+        .report-item-badge.alert {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--red-alert);
+        }
+
+        /* NRs Section */
+        .nrs-section {
+            padding: 100px 5%;
+            background: var(--dark-steel);
+        }
+
+        .nrs-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .nr-card {
+            background: var(--steel-gray);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nr-card:hover {
+            border-color: var(--yellow-safety);
+            transform: translateY(-5px);
+        }
+
+        .nr-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: var(--yellow-safety);
+            margin-bottom: 0.5rem;
+        }
+
+        .nr-title {
+            font-size: 0.95rem;
+            color: var(--light-concrete);
+            line-height: 1.4;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 5%;
+            background: var(--yellow-safety);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 40px,
+                rgba(0, 0, 0, 0.03) 40px,
+                rgba(0, 0, 0, 0.03) 80px
+            );
+        }
+
+        .cta-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .cta-content h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3.5rem;
+            color: var(--dark-steel);
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .cta-content p {
+            color: var(--concrete);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn-dark {
+            background: var(--dark-steel);
+            color: var(--white);
+            padding: 16px 36px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-dark:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-outline-dark {
+            background: transparent;
+            color: var(--dark-steel);
+            padding: 16px 36px;
+            border: 2px solid var(--dark-steel);
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-outline-dark:hover {
+            background: var(--dark-steel);
+            color: var(--white);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-steel);
+            padding: 60px 5% 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand p {
+            color: var(--light-concrete);
+            margin-top: 1rem;
+            line-height: 1.6;
+        }
+
+        .footer-column h4 {
+            color: var(--yellow-safety);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-column a {
+            color: var(--light-concrete);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-column a:hover {
+            color: var(--yellow-safety);
+        }
+
+        .footer-bottom {
+            padding-top: 2rem;
+            border-top: 1px solid var(--steel-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-bottom p {
+            color: var(--light-concrete);
+            font-size: 0.9rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: var(--steel-gray);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--yellow-safety);
+            color: var(--dark-steel);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .nrs-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .steps-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+
+            .steps-container::before {
+                display: none;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-content {
+                order: 2;
+            }
+
+            .hero-visual {
+                order: 1;
+            }
+
+            .hero p {
+                margin: 0 auto 2rem;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+
+            .hero h1 {
+                font-size: 3.5rem;
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .floating-badge {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+
+            .section-header h2 {
+                font-size: 2.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nrs-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .steps-container {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-content h2 {
+                font-size: 2.5rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .phone-mockup {
+                width: 280px;
+                height: 570px;
+            }
+        }
+
+        /* Animations on scroll */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="safety-stripes"></div>
+    
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">
+            <div class="logo-icon"></div>
+            <div class="logo-text">SST<span>Check</span>Pro</div>
+        </div>
+        <div class="nav-links">
+            <a href="#funcionalidades">Funcionalidades</a>
+            <a href="#como-funciona">Como Funciona</a>
+            <a href="#beneficios">Benefícios</a>
+            <a href="#nrs">NRs Atendidas</a>
+            <a href="#" class="btn-primary">Teste Grátis</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="badge">Checklist Digital para Obras</div>
+            <h1>INSPEÇÃO DE <span>SEGURANÇA</span> NA PALMA DA MÃO</h1>
+            <p>Realize visitas técnicas semanais, registre não conformidades com fotos, gere relatórios profissionais em PDF e envie direto do canteiro de obras.</p>
+            <div class="hero-buttons">
+                <a href="#" class="btn-primary">
+                    <span>📱</span> Baixar App Grátis
+                </a>
+                <a href="#" class="btn-secondary">Ver Demonstração</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Obras Monitoradas</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">10k+</div>
+                    <div class="stat-label">Inspeções Realizadas</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Satisfação</div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="floating-badge badge-1">
+                <div class="floating-icon green">✓</div>
+                <div class="floating-text">
+                    <div class="floating-title">Relatório Gerado</div>
+                    <div class="floating-subtitle">PDF enviado com sucesso</div>
+                </div>
+            </div>
+            <div class="phone-mockup">
+                <div class="phone-screen">
+                    <div class="phone-header">
+                        <div class="phone-header-icon">✓</div>
+                        <div class="phone-header-text">
+                            <div class="phone-header-title">Inspeção Semanal</div>
+                            <div class="phone-header-subtitle">Obra: Edifício Aurora</div>
+                        </div>
+                    </div>
+                    <div class="phone-content">
+                        <div class="checklist-item conforme">
+                            <div class="checklist-checkbox">✓</div>
+                            <div class="checklist-text">EPIs disponíveis</div>
+                            <div class="checklist-camera">📷</div>
+                        </div>
+                        <div class="checklist-item conforme">
+                            <div class="checklist-checkbox">✓</div>
+                            <div class="checklist-text">Sinalização adequada</div>
+                            <div class="checklist-camera">📷</div>
+                        </div>
+                        <div class="checklist-item nao-conforme">
+                            <div class="checklist-checkbox">✗</div>
+                            <div class="checklist-text">Guarda-corpo instalado</div>
+                            <div class="checklist-camera">📷</div>
+                        </div>
+                        <div class="checklist-item conforme">
+                            <div class="checklist-checkbox">✓</div>
+                            <div class="checklist-text">Extintores em dia</div>
+                            <div class="checklist-camera">📷</div>
+                        </div>
+                        <div class="checklist-item nao-conforme">
+                            <div class="checklist-checkbox">✗</div>
+                            <div class="checklist-text">Proteção periférica</div>
+                            <div class="checklist-camera">📷</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="floating-badge badge-2">
+                <div class="floating-icon orange">⚠️</div>
+                <div class="floating-text">
+                    <div class="floating-title">2 Não Conformidades</div>
+                    <div class="floating-subtitle">Ação imediata necessária</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="funcionalidades">
+        <div class="section-header">
+            <div class="section-tag">Funcionalidades</div>
+            <h2>TUDO QUE VOCÊ PRECISA PARA SUAS INSPEÇÕES</h2>
+            <p>Ferramenta completa para profissionais de SST que buscam agilidade e profissionalismo em suas visitas técnicas.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon">📋</div>
+                <h3>Checklists Personalizáveis</h3>
+                <p>Crie seus próprios formulários de inspeção ou utilize modelos prontos baseados nas NRs. Adapte às necessidades específicas de cada obra.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">📸</div>
+                <h3>Registro Fotográfico</h3>
+                <p>Documente cada não conformidade com fotos direto do celular. Evidências visuais que fortalecem seus laudos técnicos.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">📄</div>
+                <h3>Relatórios em PDF</h3>
+                <p>Gere laudos profissionais automaticamente com logo da empresa, fotos, localização GPS e assinatura digital.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">📧</div>
+                <h3>Envio Instantâneo</h3>
+                <p>Compartilhe relatórios por e-mail ou WhatsApp direto do canteiro de obras. Agilidade na comunicação com a equipe.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">📍</div>
+                <h3>Geolocalização</h3>
+                <p>Registre automaticamente a localização de cada inspeção. Comprove presença em campo com coordenadas GPS.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">📊</div>
+                <h3>Dashboard de Métricas</h3>
+                <p>Acompanhe indicadores de conformidade, evolução das obras e histórico de inspeções em tempo real.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works -->
+    <section class="how-it-works" id="como-funciona">
+        <div class="section-header">
+            <div class="section-tag">Como Funciona</div>
+            <h2>SIMPLES COMO DEVE SER</h2>
+            <p>Em 4 passos você finaliza sua inspeção e envia o relatório profissional.</p>
+        </div>
+        <div class="steps-container">
+            <div class="step fade-in">
+                <div class="step-number"><span>1</span></div>
+                <h3>Selecione o Checklist</h3>
+                <p>Escolha o modelo de inspeção adequado para o tipo de obra ou serviço.</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number"><span>2</span></div>
+                <h3>Faça a Inspeção</h3>
+                <p>Percorra os itens marcando conformidades e não conformidades.</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number"><span>3</span></div>
+                <h3>Registre com Fotos</h3>
+                <p>Fotografe as evidências diretamente pelo aplicativo.</p>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number"><span>4</span></div>
+                <h3>Gere e Envie</h3>
+                <p>Relatório em PDF pronto para enviar em segundos.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="benefits" id="beneficios">
+        <div class="benefits-grid">
+            <div class="benefits-content">
+                <div class="section-tag">Benefícios</div>
+                <h2>POR QUE PROFISSIONAIS ESCOLHEM O SST CHECK PRO</h2>
+                <div class="benefit-item fade-in">
+                    <div class="benefit-check"></div>
+                    <div>
+                        <h4>Economia de Tempo</h4>
+                        <p>Reduza em até 70% o tempo gasto na elaboração de relatórios.</p>
+                    </div>
+                </div>
+                <div class="benefit-item fade-in">
+                    <div class="benefit-check"></div>
+                    <div>
+                        <h4>Profissionalismo</h4>
+                        <p>Laudos padronizados com a identidade visual da sua empresa.</p>
+                    </div>
+                </div>
+                <div class="benefit-item fade-in">
+                    <div class="benefit-check"></div>
+                    <div>
+                        <h4>Trabalhe Offline</h4>
+                        <p>Faça inspeções mesmo sem internet. Sincronize quando conectar.</p>
+                    </div>
+                </div>
+                <div class="benefit-item fade-in">
+                    <div class="benefit-check"></div>
+                    <div>
+                        <h4>Histórico Completo</h4>
+                        <p>Todas as inspeções armazenadas na nuvem com busca rápida.</p>
+                    </div>
+                </div>
+                <div class="benefit-item fade-in">
+                    <div class="benefit-check"></div>
+                    <div>
+                        <h4>Conformidade Legal</h4>
+                        <p>Checklists alinhados com as Normas Regulamentadoras vigentes.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="benefits-visual fade-in">
+                <div class="report-preview">
+                    <div class="report-header">
+                        <div class="report-logo">✓</div>
+                        <div class="report-title-section">
+                            <div class="report-title">Relatório de Inspeção SST</div>
+                            <div class="report-subtitle">Obra: Residencial Park Sul</div>
+                        </div>
+                        <div class="report-date">19/12/2025</div>
+                    </div>
+                    <div class="report-body">
+                        <div class="report-section">
+                            <div class="report-section-title">📋 Itens Verificados</div>
+                            <div class="report-item">
+                                <div class="report-status ok"></div>
+                                <div class="report-item-text">Equipamentos de Proteção Individual</div>
+                                <div class="report-item-badge ok">Conforme</div>
+                            </div>
+                            <div class="report-item">
+                                <div class="report-status ok"></div>
+                                <div class="report-item-text">Sinalização de Segurança</div>
+                                <div class="report-item-badge ok">Conforme</div>
+                            </div>
+                            <div class="report-item">
+                                <div class="report-status alert"></div>
+                                <div class="report-item-text">Proteção contra Quedas</div>
+                                <div class="report-item-badge alert">Não Conforme</div>
+                            </div>
+                            <div class="report-item">
+                                <div class="report-status ok"></div>
+                                <div class="report-item-text">Ordem e Limpeza do Canteiro</div>
+                                <div class="report-item-badge ok">Conforme</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NRs Section -->
+    <section class="nrs-section" id="nrs">
+        <div class="section-header">
+            <div class="section-tag">Normas Regulamentadoras</div>
+            <h2>CHECKLISTS BASEADOS NAS NRs</h2>
+            <p>Modelos prontos desenvolvidos por especialistas em segurança do trabalho.</p>
+        </div>
+        <div class="nrs-grid">
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 1</div>
+                <div class="nr-title">Disposições Gerais e Gerenciamento de Riscos</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 6</div>
+                <div class="nr-title">Equipamentos de Proteção Individual</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 10</div>
+                <div class="nr-title">Segurança em Instalações Elétricas</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 17</div>
+                <div class="nr-title">Ergonomia no Trabalho</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 18</div>
+                <div class="nr-title">Construção Civil - Canteiros de Obras</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 33</div>
+                <div class="nr-title">Espaços Confinados</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 35</div>
+                <div class="nr-title">Trabalho em Altura</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 12</div>
+                <div class="nr-title">Máquinas e Equipamentos</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">NR 23</div>
+                <div class="nr-title">Proteção Contra Incêndios</div>
+            </div>
+            <div class="nr-card fade-in">
+                <div class="nr-number">+20</div>
+                <div class="nr-title">Outros Modelos Disponíveis</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>COMECE A USAR HOJE MESMO</h2>
+            <p>Junte-se a centenas de profissionais que já transformaram suas inspeções de segurança do trabalho.</p>
+            <div class="cta-buttons">
+                <a href="#" class="btn-dark">
+                    <span>📱</span> Baixar App Grátis
+                </a>
+                <a href="#" class="btn-outline-dark">Falar com Consultor</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo">
+                    <div class="logo-icon"></div>
+                    <div class="logo-text">SST<span>Check</span>Pro</div>
+                </div>
+                <p>Aplicativo 100% brasileiro desenvolvido para profissionais de SST que buscam agilidade, profissionalismo e conformidade em suas inspeções de campo.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Produto</h4>
+                <ul>
+                    <li><a href="#">Funcionalidades</a></li>
+                    <li><a href="#">Planos e Preços</a></li>
+                    <li><a href="#">Modelos de Checklist</a></li>
+                    <li><a href="#">Integrações</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Suporte</h4>
+                <ul>
+                    <li><a href="#">Central de Ajuda</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Contato</a></li>
+                    <li><a href="#">WhatsApp</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Termos de Uso</a></li>
+                    <li><a href="#">Política de Privacidade</a></li>
+                    <li><a href="#">LGPD</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 SST Check Pro. Todos os direitos reservados.</p>
+            <div class="social-links">
+                <a href="#">in</a>
+                <a href="#">ig</a>
+                <a href="#">yt</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll animation
+        const fadeElements = document.querySelectorAll('.fade-in');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        fadeElements.forEach(el => observer.observe(el));
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
