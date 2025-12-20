@@ -538,7 +538,8 @@ export default function InspectionViewPage() {
                           padding: "12px",
                           backgroundColor: "#fffbeb",
                           border: "1px solid #fde68a",
-                          borderRadius: "4px"
+                          borderRadius: "4px",
+                          marginBottom: "8px"
                         }}>
                           <div style={{ fontSize: "10px", fontWeight: "bold", color: "#92400e", marginBottom: "8px" }}>
                             PLANO DE AÇÃO
@@ -564,6 +565,37 @@ export default function InspectionViewPage() {
                                 {getPriorityLabel(nc.data.actionPlan.priority).text}
                               </div>
                             </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {nc.data.photos && nc.data.photos.length > 0 && (
+                        <div style={{ marginTop: "12px" }}>
+                          <div style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", marginBottom: "8px" }}>
+                            EVIDÊNCIAS FOTOGRÁFICAS ({nc.data.photos.length})
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                            {nc.data.photos.map((photoUrl: string, photoIdx: number) => (
+                              <div key={photoIdx} style={{ 
+                                width: "100%", 
+                                maxHeight: "150px",
+                                overflow: "hidden",
+                                borderRadius: "4px",
+                                border: "1px solid #e5e7eb",
+                                backgroundColor: "#f3f4f6"
+                              }}>
+                                <img 
+                                  src={photoUrl} 
+                                  alt={`Foto ${photoIdx + 1}`}
+                                  style={{ 
+                                    width: "100%", 
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    display: "block"
+                                  }}
+                                />
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
