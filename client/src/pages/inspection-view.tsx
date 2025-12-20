@@ -164,12 +164,14 @@ export default function InspectionViewPage() {
       const element = pdfRef.current;
       
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
         width: 794,
         windowWidth: 794,
+        logging: false,
+        imageTimeout: 0,
       });
 
       const pdf = new jsPDF({
@@ -182,7 +184,7 @@ export default function InspectionViewPage() {
       const pdfHeight = 297;
       const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       
       let heightLeft = imgHeight;
       let position = 0;
@@ -622,19 +624,22 @@ export default function InspectionViewPage() {
                             {nc.data.photos.map((photoUrl: string, photoIdx: number) => (
                               <div key={photoIdx} style={{ 
                                 width: "100%", 
-                                maxHeight: "150px",
+                                maxHeight: "180px",
                                 overflow: "hidden",
                                 borderRadius: "4px",
                                 border: "1px solid #e5e7eb",
-                                backgroundColor: "#f3f4f6"
+                                backgroundColor: "#f3f4f6",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
                               }}>
                                 <img 
                                   src={photoUrl} 
                                   alt={`Foto ${photoIdx + 1}`}
                                   style={{ 
-                                    width: "100%", 
-                                    height: "100%",
-                                    objectFit: "cover",
+                                    maxWidth: "100%", 
+                                    maxHeight: "180px",
+                                    objectFit: "contain",
                                     display: "block"
                                   }}
                                 />

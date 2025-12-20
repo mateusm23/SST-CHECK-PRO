@@ -524,11 +524,11 @@ export default function InspectionPage() {
 
                             {/* Photo Previews */}
                             {itemResponse?.photos?.map((photo, photoIndex) => (
-                              <div key={photoIndex} className="relative w-14 h-14 rounded-lg overflow-hidden">
-                                <img src={photo} alt="" className="w-full h-full object-cover" />
+                              <div key={photoIndex} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                                <img src={photo} alt="" className="max-w-full max-h-full object-contain" />
                                 <button
                                   onClick={() => handleRemovePhoto(globalIndex, photoIndex)}
-                                  className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                                  className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
                                   data-testid={`btn-remove-photo-${globalIndex}-${photoIndex}`}
                                 >
                                   <X className="w-3 h-3" />
