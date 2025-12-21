@@ -47,5 +47,5 @@ integrations = ["javascript_log_in_with_replit:2.0.0", "javascript_database:1.0.
 [userenv.shared]
 ADMIN_TEST_EMAIL = "admin@sstcheckpro.com"
 ADMIN_TEST_PASSWORD = "admin123"
-STRIPE_PROFESSIONAL_PRICE_ID = "price_1SgawI2dovw6AwDHvgEu0nqv"
-STRIPE_BUSINESS_PRICE_ID = "price_1SgawI2dovw6AwDHt6jJ8RTn"
+STRIPE_PROFESSIONAL_PRICE_ID = "price_1SgbcyLEZwMm7eubPS8SJYsF"
+STRIPE_BUSINESS_PRICE_ID = "price_1SgbcyLEZwMm7eubizIikI4Y"
