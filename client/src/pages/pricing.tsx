@@ -41,7 +41,7 @@ export default function PricingPage() {
     queryKey: ["/api/subscription/plans"],
   });
 
-  const { data: currentSubscription } = useQuery({
+  const { data: currentSubscription } = useQuery<{ plan?: { slug: string } }>({
     queryKey: ["/api/subscription"],
     enabled: isAuthenticated,
   });
@@ -183,7 +183,7 @@ export default function PricingPage() {
                         Plano Atual
                       </Button>
                     ) : plan.slug === "free" ? (
-                      <Link href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                      <Link href={isAuthenticated ? "/dashboard" : "/api/auth/google"}>
                         <Button
                           variant="outline"
                           className="w-full border-gray-300 text-gray-700"
@@ -201,7 +201,7 @@ export default function PricingPage() {
                         }`}
                         onClick={() => {
                           if (!isAuthenticated) {
-                            window.location.href = "/api/login";
+                            window.location.href = "/api/auth/google";
                           } else {
                             checkoutMutation.mutate(plan.slug);
                           }

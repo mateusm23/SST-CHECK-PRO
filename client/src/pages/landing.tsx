@@ -506,7 +506,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="/api/login"
+              href="/api/auth/google"
               className="inline-flex items-center gap-2 bg-[#1A1D23] text-white px-8 py-4 rounded font-bold uppercase tracking-wide hover:bg-[#2D3139] transition-all hover:-translate-y-0.5"
               data-testid="button-cta-primary"
             >
