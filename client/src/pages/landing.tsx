@@ -155,22 +155,40 @@ export default function LandingPage() {
               NRs Atendidas
             </a>
             <a
+              href="/dashboard"
+              className="inline-flex items-center gap-2 border border-[#FFD100] text-[#FFD100] px-5 py-2.5 rounded font-bold tracking-wide hover:bg-[#FFD100] hover:text-[#1A1D23] transition-all"
+              data-testid="button-members-area"
+            >
+              <Lock className="w-4 h-4" />
+              Área de Membros
+            </a>
+            <a
               href="/api/auth/google"
               className="inline-flex items-center gap-2 bg-white text-[#1A1D23] px-5 py-2.5 rounded font-bold tracking-wide hover:bg-gray-100 transition-all hover:-translate-y-0.5"
               data-testid="button-nav-cta"
             >
               <SiGoogle className="w-4 h-4 text-[#4285F4]" />
+              Começar Grátis
+            </a>
+          </div>
+          <div className="md:hidden flex items-center gap-2">
+            <a
+              href="/dashboard"
+              className="inline-flex items-center gap-1 border border-[#FFD100] text-[#FFD100] px-3 py-2 rounded font-bold text-sm"
+              data-testid="button-mobile-members"
+            >
+              <Lock className="w-3 h-3" />
+              Membros
+            </a>
+            <a
+              href="/api/auth/google"
+              className="inline-flex items-center gap-1 bg-white text-[#1A1D23] px-3 py-2 rounded font-bold text-sm"
+              data-testid="button-mobile-cta"
+            >
+              <SiGoogle className="w-3 h-3 text-[#4285F4]" />
               Entrar
             </a>
           </div>
-          <a
-            href="/api/auth/google"
-            className="md:hidden inline-flex items-center gap-2 bg-white text-[#1A1D23] px-4 py-2 rounded font-bold text-sm"
-            data-testid="button-mobile-cta"
-          >
-            <SiGoogle className="w-4 h-4 text-[#4285F4]" />
-            Entrar
-          </a>
         </div>
       </nav>
 
