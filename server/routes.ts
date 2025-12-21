@@ -473,7 +473,7 @@ export async function seedDatabase() {
         slug: "professional",
         monthlyLimit: 30,
         canUploadLogo: true,
-        price: 2990,
+        price: 900,
         stripePriceId: process.env.STRIPE_PROFESSIONAL_PRICE_ID || null,
       },
       {
@@ -481,7 +481,7 @@ export async function seedDatabase() {
         slug: "business",
         monthlyLimit: -1,
         canUploadLogo: true,
-        price: 14990,
+        price: 2990,
         stripePriceId: process.env.STRIPE_BUSINESS_PRICE_ID || null,
       },
     ]);

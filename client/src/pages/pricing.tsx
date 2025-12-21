@@ -127,7 +127,17 @@ export default function PricingPage() {
                     isPopular ? "ring-2 ring-[#FFD100]" : ""
                   }`}
                 >
-                  {isPopular && (
+                  {plan.price > 0 && (
+                    <div className="bg-red-500 text-white text-center py-1.5 text-xs font-bold uppercase tracking-wide">
+                      20% de Desconto
+                    </div>
+                  )}
+                  {isPopular && !plan.price && (
+                    <div className="bg-[#FFD100] text-[#1a1d23] text-center py-1.5 text-xs font-bold uppercase tracking-wide">
+                      Mais Popular
+                    </div>
+                  )}
+                  {isPopular && plan.price > 0 && (
                     <div className="bg-[#FFD100] text-[#1a1d23] text-center py-1.5 text-xs font-bold uppercase tracking-wide">
                       Mais Popular
                     </div>

@@ -153,12 +153,15 @@ export default function DashboardPage() {
               planos de ação com IA e muito mais!
             </p>
 
-            <div className="bg-[#FFD100]/10 rounded-xl p-4 mb-6 border border-[#FFD100]/30">
+            <div className="bg-[#FFD100]/10 rounded-xl p-4 mb-6 border border-[#FFD100]/30 relative">
+              <div className="absolute top-2 right-2 bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold">
+                20% OFF
+              </div>
               <div className="flex items-center gap-3 mb-2">
                 <Crown className="w-5 h-5 text-[#FFD100]" />
                 <span className="font-bold text-gray-900">Plano Profissional</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900 mb-1">R$ 29,90<span className="text-sm font-normal text-gray-500">/mês</span></p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">R$ 9,00<span className="text-sm font-normal text-gray-500">/mês</span></p>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• 30 inspeções por mês</li>
                 <li>• Planos de ação com IA</li>
