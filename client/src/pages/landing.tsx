@@ -168,7 +168,7 @@ export default function LandingPage() {
               data-testid="button-nav-cta"
             >
               <SiGoogle className="w-4 h-4 text-[#4285F4]" />
-              Começar Grátis
+              Faça um Teste Grátis
             </a>
           </div>
           <div className="md:hidden flex items-center gap-2">
@@ -186,7 +186,7 @@ export default function LandingPage() {
               data-testid="button-mobile-cta"
             >
               <SiGoogle className="w-3 h-3 text-[#4285F4]" />
-              Entrar
+              Teste Grátis
             </a>
           </div>
         </div>
