@@ -72,6 +72,24 @@ export default function PricingPage() {
     }).format(price / 100);
   };
 
+  // Override de preços e URLs para checkout direto (Stripe buy links)
+  const overridePriceCents: Record<string, number> = {
+    professional: 900,
+    business: 2990,
+  };
+
+  const overrideCheckoutUrls: Record<string, string> = {
+    professional: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400',
+    business: 'https://buy.stripe.com/00wcN61HN74LdVs45X38401',
+  };
+
+  const getDisplayPrice = (plan: any) => {
+    const override = overridePriceCents[plan.slug];
+    if (plan.price === 0 && !override) return 'Grátis';
+    const priceToFormat = override ?? plan.price;
+    return formatPrice(priceToFormat);
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       {/* Header */}
@@ -155,8 +173,8 @@ export default function PricingPage() {
                       </div>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-gray-900">
-                          {plan.price === 0 ? "Grátis" : formatPrice(plan.price)}
-                        </span>
+                                             {plan.price === 0 && !overridePriceCents[plan.slug] ? "Grátis" : getDisplayPrice(plan)}
+                                           </span>
                         {plan.price > 0 && (
                           <span className="text-sm text-gray-500">/mês</span>
                         )}
@@ -193,7 +211,7 @@ export default function PricingPage() {
                         </Button>
                       </Link>
                     ) : (
-                      <Button
+                        <Button
                         className={`w-full font-bold ${
                           isPopular 
                             ? "bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00]" 
@@ -203,7 +221,12 @@ export default function PricingPage() {
                           if (!isAuthenticated) {
                             window.location.href = "/api/auth/google";
                           } else {
-                            checkoutMutation.mutate(plan.slug);
+                            const directUrl = overrideCheckoutUrls[plan.slug];
+                            if (directUrl) {
+                              window.location.href = directUrl;
+                            } else {
+                              checkoutMutation.mutate(plan.slug);
+                            }
                           }
                         }}
                         disabled={checkoutMutation.isPending}
