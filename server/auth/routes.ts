@@ -4,19 +4,15 @@ import { isAuthenticated } from "./googleAuth";
 
 const ADMIN_USER_ID = "admin-test-user";
 
-// Register auth-specific routes
 export function registerAuthRoutes(app: Express): void {
-  // Get current authenticated user
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
-      // Return the full authenticated user object from session
-      // This includes claims, expires_at, and other auth info
       const user = req.user;
-      
+
       if (!user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       res.json({
         id: user.id,
         email: user.email,
@@ -33,7 +29,6 @@ export function registerAuthRoutes(app: Express): void {
     }
   });
 
-  // Admin login for testing
   app.post("/api/auth/admin-login", async (req: any, res) => {
     try {
       const { email, password } = req.body;
@@ -49,7 +44,6 @@ export function registerAuthRoutes(app: Express): void {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
-      // Upsert admin user in database
       await authStorage.upsertUser({
         id: ADMIN_USER_ID,
         email: adminEmail,
@@ -58,8 +52,7 @@ export function registerAuthRoutes(app: Express): void {
         profileImageUrl: null,
       });
 
-      // Set up session like Replit Auth does
-      const futureExpiry = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60); // 1 week
+      const futureExpiry = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
       req.user = {
         claims: {
           sub: ADMIN_USER_ID,
@@ -72,14 +65,13 @@ export function registerAuthRoutes(app: Express): void {
         isAdmin: true,
       };
 
-      // Serialize user to session
       req.login(req.user, (err: any) => {
         if (err) {
           console.error("Login error:", err);
           return res.status(500).json({ message: "Erro ao fazer login" });
         }
-        res.json({ 
-          success: true, 
+        res.json({
+          success: true,
           user: {
             id: ADMIN_USER_ID,
             email: adminEmail,

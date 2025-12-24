@@ -4,13 +4,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Check, 
-  Plus, 
-  FileText, 
-  TrendingUp, 
+import {
+  Check,
+  Plus,
+  FileText,
+  TrendingUp,
   Edit3,
-  Settings,
   LogOut,
   Crown,
   ChevronRight,
@@ -29,11 +28,15 @@ export default function DashboardPage() {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  const { data: subscription, isLoading: subLoading } = useQuery({
+  const { data: subscription } = useQuery<{
+    plan?: { slug?: string; name?: string; monthlyLimit?: number };
+    usage?: { inspectionsThisMonth?: number };
+    isVIP?: boolean;
+  }>({
     queryKey: ["/api/subscription"],
   });
 
-  const { data: inspections, isLoading: inspectionsLoading } = useQuery({
+  const { data: inspections, isLoading: inspectionsLoading } = useQuery<any[]>({
     queryKey: ["/api/inspections"],
   });
 
@@ -106,7 +109,7 @@ export default function DashboardPage() {
     );
   }
 
-  const allInspections = (inspections as any[]) || [];
+  const allInspections = inspections || [];
   const completedInspections = allInspections.filter((i) => i.status === "completed");
   const draftInspections = allInspections.filter((i) => i.status !== "completed");
   
@@ -328,8 +331,8 @@ export default function DashboardPage() {
             <div className="p-8 text-center">
               <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500 mb-2">Nenhuma inspeção ainda</p>
-              <Button 
-                variant="link" 
+              <Button
+                variant="ghost"
                 className="text-[#FFD100]"
                 onClick={handleNewInspection}
                 data-testid="button-create-first"

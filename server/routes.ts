@@ -3,7 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { isAuthenticated } from "./replit_integrations/auth";
+import { isAuthenticated } from "./auth";
 import { generateActionPlans } from "./geminiService";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { subscriptionPlans } from "@shared/schema";
