@@ -68,10 +68,10 @@ async function initStripe() {
   });
   app.use(limiter);
 
-  // Rate limiting mais restritivo para autenticação
+  // Rate limiting para autenticação
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 20, // Aumentado para fase de testes
     message: 'Muitas tentativas de login, tente novamente em 15 minutos',
   });
   app.use('/api/auth', authLimiter);
