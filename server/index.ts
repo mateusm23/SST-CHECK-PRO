@@ -45,7 +45,12 @@ async function initStripe() {
 
   // CORS configurado adequadamente
   const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? [process.env.FRONTEND_URL || 'https://sst-check-pro-production.up.railway.app']
+    ? [
+        process.env.FRONTEND_URL || 'https://www.sstcheckpro.com.br',
+        'https://www.sstcheckpro.com.br',
+        'https://sstcheckpro.com.br',
+        'https://sst-check-pro-production.up.railway.app'
+      ]
     : ['http://localhost:5000', 'http://localhost:5173'];
 
   app.use(cors({
