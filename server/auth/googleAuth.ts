@@ -98,7 +98,10 @@ export async function setupGoogleAuth(app: Express) {
     done(null, user);
   });
 
-  app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+  app.get("/api/auth/google", passport.authenticate("google", {
+    scope: ["profile", "email"],
+    prompt: "select_account" // Força Google a sempre mostrar seleção de conta
+  }));
 
   app.get(
     "/api/auth/google/callback",
