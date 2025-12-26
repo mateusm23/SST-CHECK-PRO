@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -25,6 +25,45 @@ export default function DashboardPage() {
   const { user, logout, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Track purchase conversion on successful checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true' && !sessionStorage.getItem('purchase_tracked')) {
+      sessionStorage.setItem('purchase_tracked', 'true');
+
+      // Google Analytics 4 - purchase event
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'purchase', {
+          currency: 'BRL',
+          value: 9.00,
+          transaction_id: `tx_${Date.now()}`,
+          items: [{
+            item_id: 'professional',
+            item_name: 'Plano Profissional',
+            price: 9.00,
+            quantity: 1
+          }]
+        });
+      }
+
+      // Meta Pixel - Purchase event
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'Purchase', {
+          currency: 'BRL',
+          value: 9.00
+        });
+      }
+
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard');
+
+      toast({
+        title: "Assinatura ativada!",
+        description: "Seu plano Profissional está ativo. Aproveite!",
+      });
+    }
+  }, [toast]);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
@@ -68,6 +107,27 @@ export default function DashboardPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
+      // Track InitiateCheckout event
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'begin_checkout', {
+          currency: 'BRL',
+          value: 9.00,
+          items: [{
+            item_id: 'professional',
+            item_name: 'Plano Profissional',
+            price: 9.00
+          }]
+        });
+      }
+
+      // Meta Pixel - InitiateCheckout
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'InitiateCheckout', {
+          currency: 'BRL',
+          value: 9.00
+        });
+      }
+
       const res = await apiRequest("POST", "/api/subscription/checkout", { planSlug: "professional" });
       return res.json();
     },

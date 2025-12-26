@@ -14,7 +14,26 @@ async function fetchUser(): Promise<User | null> {
     throw new Error(`${response.status}: ${response.statusText}`);
   }
 
-  return response.json();
+  const user = await response.json();
+
+  // Track sign_up conversion if this is a new user (first authentication)
+  if (user && !sessionStorage.getItem('user_tracked')) {
+    sessionStorage.setItem('user_tracked', 'true');
+
+    // Google Analytics 4 - sign_up event
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'sign_up', {
+        method: 'Google'
+      });
+    }
+
+    // Meta Pixel - Lead event
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'Lead');
+    }
+  }
+
+  return user;
 }
 
 async function logout(): Promise<void> {

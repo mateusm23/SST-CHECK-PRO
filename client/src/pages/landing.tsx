@@ -1,67 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Camera, Smartphone, Mail, MapPin, BarChart3, ClipboardList, FileText, HardHat, Shield, AlertTriangle, Lock, Loader2, X } from "lucide-react";
+import { Check, Camera, X, Lock, Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
-
-const features = [
-  {
-    icon: ClipboardList,
-    title: "Checklists Personalizáveis",
-    description: "Crie seus próprios formulários de inspeção ou utilize modelos prontos baseados nas NRs. Adapte às necessidades específicas de cada obra.",
-  },
-  {
-    icon: Camera,
-    title: "Registro Fotográfico",
-    description: "Documente cada não conformidade com fotos direto do celular. Evidências visuais que fortalecem seus laudos técnicos.",
-  },
-  {
-    icon: FileText,
-    title: "Relatórios em PDF",
-    description: "Gere laudos profissionais automaticamente com logo da empresa, fotos, localização GPS e assinatura digital.",
-  },
-  {
-    icon: Mail,
-    title: "Envio Instantâneo",
-    description: "Compartilhe relatórios por e-mail ou WhatsApp direto do canteiro de obras. Agilidade na comunicação com a equipe.",
-  },
-  {
-    icon: MapPin,
-    title: "Geolocalização",
-    description: "Registre automaticamente a localização de cada inspeção. Comprove presença em campo com coordenadas GPS.",
-  },
-  {
-    icon: BarChart3,
-    title: "Dashboard de Métricas",
-    description: "Acompanhe indicadores de conformidade, evolução das obras e histórico de inspeções em tempo real.",
-  },
-];
-
-const steps = [
-  { number: "1", title: "Selecione o Checklist", description: "Escolha o modelo de inspeção adequado para o tipo de obra ou serviço." },
-  { number: "2", title: "Faça a Inspeção", description: "Percorra os itens marcando conformidades e não conformidades." },
-  { number: "3", title: "Registre com Fotos", description: "Fotografe as evidências diretamente pelo aplicativo." },
-  { number: "4", title: "Gere e Envie", description: "Relatório em PDF pronto para enviar em segundos." },
-];
-
-const benefits = [
-  { title: "Economia de Tempo", description: "Reduza em até 70% o tempo gasto na elaboração de relatórios." },
-  { title: "Profissionalismo", description: "Laudos padronizados com a identidade visual da sua empresa." },
-  { title: "Trabalhe Offline", description: "Faça inspeções mesmo sem internet. Sincronize quando conectar." },
-  { title: "Histórico Completo", description: "Todas as inspeções armazenadas na nuvem com busca rápida." },
-  { title: "Conformidade Legal", description: "Checklists alinhados com as Normas Regulamentadoras vigentes." },
-];
-
-const nrs = [
-  { number: "NR 1", title: "Disposições Gerais e Gerenciamento de Riscos" },
-  { number: "NR 6", title: "Equipamentos de Proteção Individual" },
-  { number: "NR 10", title: "Segurança em Instalações Elétricas" },
-  { number: "NR 12", title: "Máquinas e Equipamentos" },
-  { number: "NR 17", title: "Ergonomia no Trabalho" },
-  { number: "NR 18", title: "Construção Civil - Canteiros de Obras" },
-  { number: "NR 23", title: "Proteção Contra Incêndios" },
-  { number: "NR 33", title: "Espaços Confinados" },
-  { number: "NR 35", title: "Trabalho em Altura" },
-  { number: "+20", title: "Outros Modelos Disponíveis" },
-];
 
 export default function LandingPage() {
   const fadeRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -126,122 +65,89 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1A1D23] text-white overflow-x-hidden">
-      {/* Safety Stripes */}
-      <div className="safety-stripes" />
-
+    <div className="min-h-screen bg-[#1A1D23] text-white">
       {/* Navigation */}
-      <nav className="fixed top-2 left-0 right-0 z-50 bg-[#1A1D23]/95 backdrop-blur-md px-4 md:px-8 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#FFD100] rounded-lg flex items-center justify-center">
-              <Check className="w-7 h-7 text-[#1A1D23] stroke-[3]" />
+      <nav className="sticky top-0 z-50 bg-[#1A1D23]/95 backdrop-blur-md border-b border-[#FFD100]/10 px-4 md:px-8 py-5">
+        <div className="max-w-[1200px] mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 bg-[#FFD100] rounded-lg flex items-center justify-center">
+              <Check className="w-5 h-5 text-[#1A1D23] stroke-[3]" />
             </div>
-            <span className="font-display text-2xl tracking-wider">
-              SST<span className="text-[#FFD100]">Check</span>Pro
+            <span className="font-bold text-xl md:text-2xl">
+              SST<span className="text-[#FFD100]">Check</span> Pro
             </span>
-          </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#funcionalidades" className="font-medium hover:text-[#FFD100] transition-colors" data-testid="link-features">
-              Funcionalidades
-            </a>
-            <a href="#como-funciona" className="font-medium hover:text-[#FFD100] transition-colors" data-testid="link-how-it-works">
-              Como Funciona
-            </a>
-            <a href="#beneficios" className="font-medium hover:text-[#FFD100] transition-colors" data-testid="link-benefits">
-              Benefícios
-            </a>
-            <a href="#nrs" className="font-medium hover:text-[#FFD100] transition-colors" data-testid="link-nrs">
-              NRs Atendidas
-            </a>
-            <a
-              href="/api/auth/google"
-              className="inline-flex items-center gap-2 bg-white text-[#1A1D23] px-5 py-2.5 rounded font-bold tracking-wide hover:bg-gray-100 transition-all hover:-translate-y-0.5"
-              data-testid="button-nav-cta"
-            >
-              <SiGoogle className="w-4 h-4 text-[#4285F4]" />
-              Entrar
-            </a>
           </div>
           <a
             href="/api/auth/google"
-            className="md:hidden inline-flex items-center gap-2 bg-white text-[#1A1D23] px-4 py-2 rounded font-bold text-sm"
-            data-testid="button-mobile-cta"
+            className="text-white hover:bg-white/10 transition-all px-4 md:px-5 py-2 md:py-2.5 rounded border border-[#FFD100]/20 hover:border-[#FFD100] font-medium"
+            data-testid="button-nav-login"
           >
-            <SiGoogle className="w-4 h-4 text-[#4285F4]" />
-            Entrar
+            Área de Membros
           </a>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="min-h-screen pt-32 pb-20 px-4 md:px-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[60%] h-full bg-gradient-to-bl from-[#2D3139] to-transparent clip-path-hero -z-10" />
-        
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+      {/* 1. Hero Section */}
+      <section className="px-4 md:px-8 py-16 md:py-24 bg-gradient-to-br from-[#1A1D23] to-[#2D3139] relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 bottom-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,209,0,0.08),transparent_50%)] pointer-events-none" />
+
+        <div className="max-w-[1200px] mx-auto grid lg:grid-cols-2 gap-12 md:gap-16 items-center relative z-10">
           {/* Hero Content */}
-          <div className="animate-slide-left">
-            <div className="inline-flex items-center gap-2 bg-[#FFD100]/15 border border-[#FFD100] text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold mb-6">
-              <HardHat className="w-4 h-4" />
-              Checklist Digital para Obras
+          <div>
+            <div className="inline-block bg-gradient-to-r from-[#FFD100] to-[#FFA500] text-[#1A1D23] px-4 md:px-6 py-2 md:py-3 rounded-full font-bold text-sm md:text-base mb-4 md:mb-6 shadow-lg">
+              ⚡ Aprovado por 150+ Empresas de Construção Civil
             </div>
-            
-            <h1 className="font-display text-5xl md:text-7xl leading-none mb-6 tracking-wide">
-              INSPEÇÃO DE <span className="text-[#FFD100]">SEGURANÇA</span> NA PALMA DA MÃO
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-4 md:mb-6">
+              Laudos de SST em <span className="text-[#FFD100]">10 Minutos</span>,<br className="hidden md:block"/>Não 4 Horas
             </h1>
-            
-            <p className="text-lg text-[#8B9099] mb-8 max-w-lg leading-relaxed">
-              Realize visitas técnicas semanais, registre não conformidades com fotos, gere relatórios profissionais em PDF e envie direto do canteiro de obras.
+
+            <p className="text-lg md:text-xl text-[#B8BCC4] mb-6 md:mb-8 leading-relaxed max-w-lg">
+              Pare de perder tempo criando laudos manualmente. Sistema completo para profissionais de Segurança do Trabalho.
             </p>
-            
-            <div className="flex flex-wrap gap-4 mb-12">
-              <a
-                href="/api/auth/google"
-                className="inline-flex items-center gap-3 bg-white text-[#1A1D23] px-7 py-4 rounded font-bold tracking-wide hover:bg-gray-100 transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                data-testid="button-hero-primary"
-              >
-                <SiGoogle className="w-5 h-5 text-[#4285F4]" />
-                Faça um Teste Grátis
-              </a>
-              <a
-                href="/api/auth/google"
-                className="inline-flex items-center gap-2 bg-[#FFD100] text-[#1A1D23] px-7 py-4 rounded font-bold tracking-wide hover:bg-[#E6BC00] transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                data-testid="button-members-area"
-              >
-                <Shield className="w-5 h-5" />
-                Área de Membros
-              </a>
-              <a
-                href="#como-funciona"
-                className="inline-flex items-center gap-2 border-2 border-white px-7 py-4 rounded font-semibold hover:bg-white hover:text-[#1A1D23] transition-all"
-                data-testid="button-hero-secondary"
-              >
-                Ver Demonstração
-              </a>
+
+            <div className="bg-[#34C759]/15 border-l-4 border-[#34C759] px-4 md:px-6 py-3 md:py-4 rounded-lg mb-6 md:mb-10">
+              <p className="font-semibold text-[#D0F5DC]">
+                ⏱️ Economize até 90% do tempo + Aumente sua produtividade em 5x
+              </p>
             </div>
-            
-            <div className="flex gap-12 pt-8 border-t border-[#2D3139]">
-              <div>
-                <div className="font-display text-4xl text-[#FFD100]">500+</div>
-                <div className="text-sm text-[#8B9099]">Obras Monitoradas</div>
-              </div>
-              <div>
-                <div className="font-display text-4xl text-[#FFD100]">10k+</div>
-                <div className="text-sm text-[#8B9099]">Inspeções Realizadas</div>
-              </div>
-              <div>
-                <div className="font-display text-4xl text-[#FFD100]">98%</div>
-                <div className="text-sm text-[#8B9099]">Satisfação</div>
+
+            <a
+              href="/api/auth/google"
+              className="inline-flex items-center gap-2 md:gap-3 bg-[#FFD100] text-[#1A1D23] px-6 md:px-10 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg hover:bg-[#E6BC00] transition-all shadow-[0_8px_25px_rgba(255,209,0,0.4)] hover:shadow-[0_12px_35px_rgba(255,209,0,0.5)] hover:-translate-y-1"
+              data-testid="button-hero-cta"
+            >
+              🚀 Começar Grátis - 3 Laudos Sem Cartão
+            </a>
+
+            {/* Trust Indicators */}
+            <div className="mt-10 md:mt-12 pt-8 md:pt-10 border-t border-white/10">
+              <p className="text-center text-xs md:text-sm font-semibold text-[#FFD100] mb-4 md:mb-6 uppercase tracking-wider">
+                Números que Impressionam
+              </p>
+              <div className="grid grid-cols-3 gap-4 md:gap-12">
+                <div className="text-center">
+                  <div className="text-2xl md:text-4xl font-black text-[#FFD100]">5.000+</div>
+                  <div className="text-xs md:text-sm text-[#B8BCC4] mt-1">Laudos Gerados</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl md:text-4xl font-black text-[#FFD100]">150+</div>
+                  <div className="text-xs md:text-sm text-[#B8BCC4] mt-1">Empresas</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl md:text-4xl font-black text-[#FFD100]">10min</div>
+                  <div className="text-xs md:text-sm text-[#B8BCC4] mt-1">Tempo Médio</div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Phone Mockup */}
-          <div className="relative flex justify-center animate-slide-right">
+          <div className="relative flex justify-center">
             {/* Floating Badge 1 */}
-            <div className="absolute top-[15%] -left-4 lg:left-0 bg-white rounded-xl p-4 shadow-2xl flex items-center gap-3 animate-float z-10">
-              <div className="w-10 h-10 rounded-lg bg-[#34C759]/15 flex items-center justify-center">
-                <Check className="w-5 h-5 text-[#34C759]" />
+            <div className="hidden lg:flex absolute top-[15%] -left-4 bg-white rounded-xl p-4 shadow-2xl items-center gap-3 z-10 animate-float">
+              <div className="w-10 h-10 rounded-xl bg-[#34C759]/15 flex items-center justify-center shrink-0">
+                <span className="text-2xl">✓</span>
               </div>
               <div>
                 <div className="font-bold text-[#1A1D23] text-sm">Relatório Gerado</div>
@@ -250,19 +156,19 @@ export default function LandingPage() {
             </div>
 
             {/* Phone */}
-            <div className="w-72 md:w-80 bg-[#1A1D23] rounded-[40px] border-4 border-[#2D3139] p-3 shadow-2xl">
-              <div className="w-full h-full bg-white rounded-[32px] overflow-hidden">
+            <div className="w-full max-w-[300px] bg-[#1A1D23] rounded-[40px] border-4 border-[#2D3139] p-3 shadow-2xl">
+              <div className="w-full bg-white rounded-[32px] overflow-hidden">
                 {/* Phone Header */}
                 <div className="bg-[#FFD100] p-4 flex items-center gap-3">
                   <div className="w-9 h-9 bg-[#1A1D23] rounded-lg flex items-center justify-center">
                     <Check className="w-5 h-5 text-[#FFD100]" />
                   </div>
                   <div>
-                    <div className="font-bold text-[#1A1D23]">Inspeção Semanal</div>
+                    <div className="font-bold text-[#1A1D23] text-sm">Inspeção Semanal</div>
                     <div className="text-xs text-[#1A1D23]/70">Obra: Edifício Aurora</div>
                   </div>
                 </div>
-                
+
                 {/* Phone Content */}
                 <div className="p-4 space-y-3">
                   {[
@@ -279,14 +185,14 @@ export default function LandingPage() {
                       }`}
                     >
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-sm ${
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold ${
                           item.ok ? "bg-[#34C759]" : "bg-[#FF3B30]"
                         }`}
                       >
                         {item.ok ? "✓" : "✗"}
                       </div>
                       <span className="flex-1 text-[#1A1D23] text-sm font-medium">{item.text}</span>
-                      <div className="w-8 h-8 bg-[#FFD100] rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-[#FFD100] rounded-lg flex items-center justify-center shrink-0">
                         <Camera className="w-4 h-4 text-[#1A1D23]" />
                       </div>
                     </div>
@@ -296,9 +202,9 @@ export default function LandingPage() {
             </div>
 
             {/* Floating Badge 2 */}
-            <div className="absolute bottom-[25%] -right-4 lg:right-0 bg-white rounded-xl p-4 shadow-2xl flex items-center gap-3 animate-float-delayed z-10">
-              <div className="w-10 h-10 rounded-lg bg-[#FF6B35]/15 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-[#FF6B35]" />
+            <div className="hidden lg:flex absolute bottom-[25%] -right-4 bg-white rounded-xl p-4 shadow-2xl items-center gap-3 z-10 animate-float-delayed">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6B35]/15 flex items-center justify-center shrink-0">
+                <span className="text-2xl">⚠️</span>
               </div>
               <div>
                 <div className="font-bold text-[#1A1D23] text-sm">2 Não Conformidades</div>
@@ -309,301 +215,590 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="funcionalidades" className="py-24 px-4 md:px-8 bg-[#2D3139] relative">
-        <div className="absolute inset-0 opacity-50" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-        
-        <div className="max-w-7xl mx-auto relative">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-block bg-[#FFD100] text-[#1A1D23] px-4 py-1.5 rounded font-bold text-sm uppercase tracking-wider mb-4">
-              Funcionalidades
+      {/* 2. VS Manual - A Dor */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#1A1D23]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
+              O Problema
             </div>
-            <h2 className="font-display text-4xl md:text-5xl tracking-wide mb-4">
-              TUDO QUE VOCÊ PRECISA PARA SUAS INSPEÇÕES
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4 text-[#FF6B6B]">
+              Você Está Perdendo Dinheiro com Laudos Manuais
             </h2>
-            <p className="text-[#8B9099] text-lg">
-              Ferramenta completa para profissionais de SST que buscam agilidade e profissionalismo em suas visitas técnicas.
+            <p className="text-lg md:text-xl text-[#B8BCC4] max-w-2xl mx-auto">
+              Cada hora gasta em formatação é uma hora que você poderia estar faturando em campo
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, i) => (
-              <div
-                key={feature.title}
-                ref={addFadeRef}
-                className="bg-[#1A1D23] rounded-2xl p-8 border border-white/5 transition-all duration-300 hover:-translate-y-2 hover:border-[#FFD100] hover:shadow-xl group relative overflow-hidden opacity-0 translate-y-8"
-                style={{ transitionDelay: `${i * 100}ms` }}
-              >
-                <div className="absolute top-0 left-0 right-0 h-1 bg-[#FFD100] scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-                <div className="w-16 h-16 bg-[#FFD100]/10 rounded-2xl flex items-center justify-center mb-6">
-                  <feature.icon className="w-7 h-7 text-[#FFD100]" />
+          {/* Visual Comparison */}
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16 mb-12 md:mb-16">
+            {/* Old Way */}
+            <div className="text-center">
+              <div className="text-xl md:text-2xl font-bold mb-6 text-[#FF6B6B]">❌ Método Antigo</div>
+              <div className="w-32 md:w-40 h-40 md:h-48 bg-white rounded-xl mx-auto mb-6 relative shadow-lg">
+                <div className="absolute top-0 right-0 w-8 h-8 md:w-9 md:h-9 bg-gray-100" style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%)" }} />
+                <div className="p-5 md:p-6">
+                  {[...Array(7)].map((_, i) => (
+                    <div key={i} className={`h-1 bg-gray-200 rounded mb-2 ${i % 3 === 2 ? "w-3/5" : "w-full"}`} />
+                  ))}
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-[#8B9099] leading-relaxed">{feature.description}</p>
               </div>
-            ))}
+              <p className="text-[#B8BCC4] text-base md:text-lg mb-4">
+                Word + Excel + Formatação Manual
+              </p>
+              <div className="inline-block bg-[#FF6B6B]/15 border-2 border-[#FF6B6B] text-[#FFB3B3] px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base">
+                💸 R$200+ de custo por laudo (3-4h × R$50/h)
+              </div>
+            </div>
+
+            {/* New Way */}
+            <div className="text-center">
+              <div className="text-xl md:text-2xl font-bold mb-6 text-[#34C759]">✅ SST Check Pro</div>
+              <div className="w-48 md:w-52 mx-auto mb-6">
+                <div className="bg-[#1A1D23] rounded-3xl border-3 border-[#2D3139] p-2 shadow-lg">
+                  <div className="bg-white rounded-2xl overflow-hidden">
+                    <div className="bg-[#FFD100] p-3 text-center">
+                      <div className="font-bold text-[#1A1D23] text-sm">SST Check Pro</div>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border-l-4 border-[#34C759]">
+                        <div className="w-5 h-5 rounded-full bg-[#34C759] flex items-center justify-center text-white text-xs">✓</div>
+                        <span className="flex-1 text-[#1A1D23] text-xs">EPI OK</span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border-l-4 border-[#34C759]">
+                        <div className="w-5 h-5 rounded-full bg-[#34C759] flex items-center justify-center text-white text-xs">✓</div>
+                        <span className="flex-1 text-[#1A1D23] text-xs">Sinalização</span>
+                      </div>
+                      <div className="bg-[#FFD100] text-[#1A1D23] p-3 rounded-lg text-center font-bold text-xs">
+                        Gerar PDF
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[#B8BCC4] text-base md:text-lg mb-4">
+                App Móvel + Sistema
+              </p>
+              <div className="inline-block bg-[#34C759]/15 border-2 border-[#34C759] text-[#A7F3D0] px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base">
+                💰 R$30 de custo + 6x mais laudos/dia = Mais lucro
+              </div>
+            </div>
+          </div>
+
+          {/* Text Comparison */}
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+            {/* Manual */}
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 md:p-8">
+              <h3 className="text-xl md:text-2xl font-bold mb-6 text-center">❌ Método Manual (Tradicional)</h3>
+              <ul className="space-y-3 md:space-y-4">
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#FF6B6B] font-bold shrink-0">✗</span>
+                  <span><strong>3-4 horas por laudo</strong> - tempo que poderia estar faturando</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#FF6B6B] font-bold shrink-0">✗</span>
+                  <span><strong>Custo elevado:</strong> R$150-200 por laudo em tempo investido</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#FF6B6B] font-bold shrink-0">✗</span>
+                  <span>Word + Excel + formatação manual infinita</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#FF6B6B] font-bold shrink-0">✗</span>
+                  <span>Riscos de erros que geram retrabalho</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#FF6B6B] font-bold shrink-0">✗</span>
+                  <span>Difícil organizar fotos e evidências</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#FF6B6B] font-bold shrink-0">✗</span>
+                  <span>Sem histórico centralizado</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#FF6B6B] font-bold shrink-0">✗</span>
+                  <span><strong>Máximo 2 laudos por dia</strong></span>
+                </li>
+              </ul>
+            </div>
+
+            {/* SST Check Pro */}
+            <div className="bg-[#FFD100]/5 border-2 border-[#FFD100] rounded-2xl p-6 md:p-8 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FFD100] to-[#FFA500] text-[#1A1D23] px-4 md:px-6 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-black uppercase tracking-wide">
+                ✨ MELHOR ESCOLHA
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold mb-6 text-center mt-2">✅ SST Check Pro (Automatizado)</h3>
+              <ul className="space-y-3 md:space-y-4">
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                  <span><strong>10 minutos por laudo completo</strong></span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                  <span><strong>Custo fixo:</strong> Apenas R$29,90/mês ilimitado</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                  <span>Checklists prontos de todas NRs</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                  <span>Relatório profissional gerado automaticamente</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                  <span>Upload de fotos integrado com geolocação</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                  <span>Todos laudos salvos na nuvem com busca</span>
+                </li>
+                <li className="flex gap-3 text-sm md:text-base">
+                  <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                  <span><strong>Até 12+ laudos por dia = 6x mais receita</strong></span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How it Works */}
-      <section id="como-funciona" className="py-24 px-4 md:px-8 bg-[#1A1D23]">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-block bg-[#FFD100] text-[#1A1D23] px-4 py-1.5 rounded font-bold text-sm uppercase tracking-wider mb-4">
+      {/* 3. How It Works */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#2D3139]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
               Como Funciona
             </div>
-            <h2 className="font-display text-4xl md:text-5xl tracking-wide mb-4">
-              SIMPLES COMO DEVE SER
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+              SIMPLES COMO <span className="text-[#FFD100]">1, 2, 3</span>
             </h2>
-            <p className="text-[#8B9099] text-lg">
-              Em 4 passos você finaliza sua inspeção e envia o relatório profissional.
+            <p className="text-lg md:text-xl text-[#B8BCC4] max-w-2xl mx-auto">
+              Do campo ao PDF profissional em 3 etapas automatizadas
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
-            <div className="hidden lg:block absolute top-[50px] left-[12.5%] right-[12.5%] h-1 bg-[#2D3139]" />
-            
-            {steps.map((step, i) => (
-              <div
-                key={step.number}
-                ref={addFadeRef}
-                className="text-center relative opacity-0 translate-y-8 transition-all duration-500"
-                style={{ transitionDelay: `${i * 150}ms` }}
-              >
-                <div className="w-24 h-24 bg-[#2D3139] rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 transition-all duration-300 hover:bg-[#FFD100] hover:scale-110 group">
-                  <span className="font-display text-4xl text-[#FFD100] group-hover:text-[#1A1D23] transition-colors">
-                    {step.number}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold mb-2">{step.title}</h3>
-                <p className="text-[#8B9099] text-sm">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
+            {/* Arrows */}
+            <div className="hidden md:block absolute top-[80px] left-[29%] text-5xl text-[#FFD100]/30 font-bold">→</div>
+            <div className="hidden md:block absolute top-[80px] right-[29%] text-5xl text-[#FFD100]/30 font-bold">→</div>
 
-      {/* Benefits Section */}
-      <section id="beneficios" className="py-24 px-4 md:px-8 bg-gradient-to-br from-[#2D3139] to-[#1A1D23]">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          {/* Benefits List */}
-          <div>
-            <div className="inline-block bg-[#FFD100] text-[#1A1D23] px-4 py-1.5 rounded font-bold text-sm uppercase tracking-wider mb-4">
-              Benefícios
+            {/* Step 1 */}
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 md:p-10 text-center hover:border-[#FFD100]/50 transition-all">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-[#FFD100] to-[#FFA500] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <span className="text-3xl md:text-4xl font-black text-[#1A1D23]">1</span>
+              </div>
+              <div className="text-4xl md:text-5xl mb-4 md:mb-6">📱</div>
+              <h3 className="text-lg md:text-xl font-bold mb-3 text-[#FFD100]">Você Coleta os Dados</h3>
+              <p className="text-sm md:text-base text-[#B8BCC4] leading-relaxed">
+                No canteiro de obras, use o app móvel para marcar itens do checklist e tirar fotos das não conformidades. Funciona offline.
+              </p>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl tracking-wide mb-8">
-              POR QUE PROFISSIONAIS ESCOLHEM O SST CHECK PRO
-            </h2>
-            
-            <div className="space-y-4">
-              {benefits.map((benefit, i) => (
-                <div
-                  key={benefit.title}
-                  ref={addFadeRef}
-                  className="flex gap-4 p-5 bg-white/[0.03] rounded-xl border border-white/5 transition-all duration-300 hover:bg-[#FFD100]/5 hover:border-[#FFD100] opacity-0 translate-y-8"
-                  style={{ transitionDelay: `${i * 100}ms` }}
-                >
-                  <div className="w-8 h-8 bg-[#FFD100] rounded-lg flex items-center justify-center shrink-0">
-                    <Check className="w-5 h-5 text-[#1A1D23] stroke-[3]" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-1">{benefit.title}</h4>
-                    <p className="text-[#8B9099] text-sm">{benefit.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Report Preview */}
-          <div
-            ref={addFadeRef}
-            className="opacity-0 translate-y-8 transition-all duration-700"
-          >
-            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform perspective-1000 lg:rotate-y-[-5deg]">
-              {/* Report Header */}
-              <div className="bg-[#1A1D23] p-5 flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#FFD100] rounded-lg flex items-center justify-center">
-                  <Check className="w-6 h-6 text-[#1A1D23] stroke-[3]" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-white font-bold">Relatório de Inspeção SST</div>
-                  <div className="text-[#8B9099] text-sm">Obra: Residencial Park Sul</div>
-                </div>
-                <div className="text-[#FFD100] font-semibold">19/12/2025</div>
+            {/* Step 2 */}
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 md:p-10 text-center hover:border-[#FFD100]/50 transition-all">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-[#FFD100] to-[#FFA500] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <span className="text-3xl md:text-4xl font-black text-[#1A1D23]">2</span>
               </div>
-              
-              {/* Report Body */}
-              <div className="p-6">
-                <div className="mb-6">
-                  <div className="font-bold text-[#1A1D23] text-sm mb-3 pb-2 border-b-2 border-gray-100 flex items-center gap-2">
-                    <ClipboardList className="w-4 h-4" />
-                    Itens Verificados
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { ok: true, text: "Equipamentos de Proteção Individual" },
-                      { ok: true, text: "Sinalização de Segurança" },
-                      { ok: false, text: "Proteção contra Quedas" },
-                      { ok: true, text: "Ordem e Limpeza do Canteiro" },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50">
-                        <div className={`w-2.5 h-2.5 rounded-full ${item.ok ? "bg-[#34C759]" : "bg-[#FF3B30]"}`} />
-                        <span className="flex-1 text-[#1A1D23] text-sm">{item.text}</span>
-                        <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
-                          item.ok 
-                            ? "bg-[#34C759]/10 text-[#34C759]" 
-                            : "bg-[#FF3B30]/10 text-[#FF3B30]"
-                        }`}>
-                          {item.ok ? "Conforme" : "Não Conforme"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="text-4xl md:text-5xl mb-4 md:mb-6">⚙️</div>
+              <h3 className="text-lg md:text-xl font-bold mb-3 text-[#FFD100]">Sistema Processa Tudo</h3>
+              <p className="text-sm md:text-base text-[#B8BCC4] leading-relaxed">
+                Nossa plataforma analisa suas respostas, organiza as fotos e gera automaticamente o relatório técnico completo e profissional.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 md:p-10 text-center hover:border-[#FFD100]/50 transition-all">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-[#FFD100] to-[#FFA500] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <span className="text-3xl md:text-4xl font-black text-[#1A1D23]">3</span>
               </div>
+              <div className="text-4xl md:text-5xl mb-4 md:mb-6">📄</div>
+              <h3 className="text-lg md:text-xl font-bold mb-3 text-[#FFD100]">Recebe o PDF Pronto</h3>
+              <p className="text-sm md:text-base text-[#B8BCC4] leading-relaxed">
+                Em segundos, o laudo em PDF está pronto com logo, fotos, GPS e assinatura digital. Envie por email ou WhatsApp direto do app.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* NRs Section */}
-      <section id="nrs" className="py-24 px-4 md:px-8 bg-[#1A1D23]">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-block bg-[#FFD100] text-[#1A1D23] px-4 py-1.5 rounded font-bold text-sm uppercase tracking-wider mb-4">
-              Normas Regulamentadoras
+      {/* 4. Features */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#1A1D23]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
+              Funcionalidades
             </div>
-            <h2 className="font-display text-4xl md:text-5xl tracking-wide mb-4">
-              CHECKLISTS BASEADOS NAS NRs
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+              TUDO QUE VOCÊ PRECISA, <span className="text-[#FFD100]">NUM SÓ LUGAR</span>
             </h2>
-            <p className="text-[#8B9099] text-lg">
-              Modelos prontos desenvolvidos por especialistas em segurança do trabalho.
+            <p className="text-lg md:text-xl text-[#B8BCC4] max-w-2xl mx-auto">
+              Plataforma completa para profissionais de SST modernos
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {nrs.map((nr, i) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {[
+              { icon: "📋", title: "Checklists Personalizáveis", desc: "Modelos prontos de todas as NRs ou crie os seus personalizados. Adaptáveis a qualquer tipo de obra ou indústria." },
+              { icon: "📷", title: "Registro Fotográfico", desc: "Tire fotos direto do celular e vincule a cada item. Evidências visuais com GPS e timestamp automáticos." },
+              { icon: "⚙️", title: "Geração Automatizada", desc: "Sistema analisa seus dados e gera automaticamente relatórios técnicos padronizados e profissionais em segundos." },
+              { icon: "📄", title: "PDF Profissional", desc: "Laudos com logo da empresa, fotos organizadas, localização GPS, gráficos de conformidade e assinatura digital." },
+              { icon: "☁️", title: "Armazenamento Nuvem", desc: "Todos os laudos salvos com segurança na nuvem. Busca rápida por obra, data, NR ou palavra-chave. Acesso de qualquer lugar." },
+              { icon: "📶", title: "Modo Offline", desc: "Faça inspeções mesmo sem internet. Os dados sincronizam automaticamente quando você conectar novamente." },
+              { icon: "✉️", title: "Envio Instantâneo", desc: "Compartilhe relatórios por email ou WhatsApp direto do canteiro. Cliente recebe o laudo ainda quente." },
+              { icon: "📊", title: "Dashboard Analytics", desc: "Métricas de conformidade, histórico de inspeções, tendências de não conformidades. Dados para decisões inteligentes." },
+              { icon: "🔐", title: "Segurança de Dados", desc: "Criptografia ponta a ponta, backups automáticos e compliance com LGPD. Seus dados e dos clientes 100% protegidos." },
+            ].map((feature, i) => (
               <div
-                key={nr.number}
+                key={i}
                 ref={addFadeRef}
-                className="bg-[#2D3139] rounded-xl p-6 text-center border border-white/5 transition-all duration-300 hover:-translate-y-1 hover:border-[#FFD100] hover:shadow-lg group opacity-0 translate-y-8"
+                className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 md:p-8 hover:border-[#FFD100]/30 hover:-translate-y-1 transition-all opacity-0 translate-y-8"
                 style={{ transitionDelay: `${i * 50}ms` }}
               >
-                <div className="font-display text-3xl text-[#FFD100] mb-2 group-hover:scale-110 transition-transform">
-                  {nr.number}
-                </div>
-                <div className="text-xs text-[#8B9099] leading-tight">{nr.title}</div>
+                <div className="text-4xl md:text-5xl mb-4 md:mb-5">{feature.icon}</div>
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">{feature.title}</h3>
+                <p className="text-sm md:text-base text-[#B8BCC4] leading-relaxed">{feature.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 px-4 md:px-8 bg-[#FFD100]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="font-display text-4xl md:text-5xl text-[#1A1D23] tracking-wide mb-6">
-            COMECE A USAR HOJE MESMO
-          </h2>
-          <p className="text-[#1A1D23]/70 text-lg mb-10 max-w-2xl mx-auto">
-            Junte-se a centenas de profissionais que já transformaram suas inspeções de segurança do trabalho.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href="/api/auth/google"
-              className="inline-flex items-center gap-2 bg-[#1A1D23] text-white px-8 py-4 rounded font-bold uppercase tracking-wide hover:bg-[#2D3139] transition-all hover:-translate-y-0.5"
-              data-testid="button-cta-primary"
-            >
-              <Smartphone className="w-5 h-5" />
-              Começar Grátis
-            </a>
-            <a
-              href="#funcionalidades"
-              className="inline-flex items-center gap-2 border-2 border-[#1A1D23] text-[#1A1D23] px-8 py-4 rounded font-semibold hover:bg-[#1A1D23] hover:text-white transition-all"
-              data-testid="button-cta-secondary"
-            >
-              Falar com Consultor
-            </a>
+      {/* 5. Use Cases */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#2D3139]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
+              Casos de Uso Reais
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+              QUEM USA <span className="text-[#FFD100]">SST CHECK PRO</span>
+            </h2>
+            <p className="text-lg md:text-xl text-[#B8BCC4] max-w-2xl mx-auto">
+              Profissionais de diferentes áreas economizando tempo todos os dias
+            </p>
           </div>
+
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+            {[
+              { icon: "👷", title: "Engenheiro de Obras", subtitle: "Construção Civil", text: "\"Visito 3 canteiros por semana. <strong>Antes gastava 12h/semana em laudos</strong>. Hoje gasto 30 minutos. Sobra tempo para focar na engenharia de verdade.\"" },
+              { icon: "🦺", title: "Técnico de Segurança", subtitle: "Múltiplas Obras", text: "\"Atendo 5 obras diferentes por dia. <strong>Com o app móvel faço inspeções no local</strong> e envio os laudos antes de sair. Meus clientes adoram a agilidade.\"" },
+              { icon: "💼", title: "Consultoria SST", subtitle: "15+ Clientes B2B", text: "\"Atendo 15 empresas. <strong>Todos os laudos organizados na nuvem</strong> com busca rápida. PDFs padronizados aumentaram minha credibilidade e permitiram escalar o negócio.\"" },
+            ].map((useCase, i) => (
+              <div
+                key={i}
+                ref={addFadeRef}
+                className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 md:p-10 hover:border-[#FFD100]/30 hover:-translate-y-1 transition-all opacity-0 translate-y-8"
+                style={{ transitionDelay: `${i * 100}ms` }}
+              >
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-r from-[#FFD100] to-[#FFA500] rounded-full flex items-center justify-center text-2xl md:text-3xl mb-6">
+                  {useCase.icon}
+                </div>
+                <h3 className="text-lg md:text-xl font-bold text-[#FFD100] mb-1 md:mb-2">{useCase.title}</h3>
+                <p className="text-xs md:text-sm text-[#8B9099] mb-4 md:mb-5">{useCase.subtitle}</p>
+                <p className="text-sm md:text-base text-[#B8BCC4] leading-relaxed" dangerouslySetInnerHTML={{ __html: useCase.text }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Testimonials */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#1A1D23]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
+              Depoimentos
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+              O QUE NOSSOS <span className="text-[#FFD100]">CLIENTES DIZEM</span>
+            </h2>
+            <p className="text-lg md:text-xl text-[#B8BCC4] max-w-2xl mx-auto">
+              Resultados reais de profissionais que já transformaram seu trabalho
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+            {[
+              { initial: "RC", name: "Roberto Costa", role: "Engenheiro de Segurança • São Paulo", text: "Antes levava 3 horas para formatar um laudo no Word. Agora faço em 10 minutos e o resultado fica até mais profissional. Minha produtividade aumentou demais.", result: "✓ 70% menos tempo em laudos" },
+              { initial: "MF", name: "Mariana Fonseca", role: "Técnica de Segurança • Rio de Janeiro", text: "O modo offline é sensacional. Faço inspeções em locais remotos sem sinal e depois sincroniza tudo. O sistema realmente gera relatórios bem completos e profissionais.", result: "✓ 12 laudos/dia em vez de 2" },
+              { initial: "PS", name: "Pedro Santos", role: "Consultor SST Autônomo • Minas Gerais", text: "Consegui aumentar meu faturamento em 300% porque agora consigo atender muito mais clientes por mês. O SST Check Pro pagou o investimento em 2 dias de uso.", result: "✓ 300% aumento no faturamento" },
+            ].map((testimonial, i) => (
+              <div
+                key={i}
+                ref={addFadeRef}
+                className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 md:p-8 hover:border-[#FFD100]/30 hover:-translate-y-1 transition-all opacity-0 translate-y-8 relative"
+                style={{ transitionDelay: `${i * 100}ms` }}
+              >
+                <div className="text-5xl md:text-6xl text-[#FFD100]/20 mb-4">"</div>
+                <p className="text-sm md:text-base text-[#D0D3D9] leading-relaxed mb-6">{testimonial.text}</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-[#FFD100] to-[#FFA500] rounded-full flex items-center justify-center font-bold text-[#1A1D23] shrink-0">
+                    {testimonial.initial}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold mb-1">{testimonial.name}</h4>
+                    <p className="text-xs text-[#8B9099] mb-2">{testimonial.role}</p>
+                    <div className="text-[#FFD100] text-sm mb-2">⭐⭐⭐⭐⭐</div>
+                    <div className="inline-block bg-[#34C759]/15 border border-[#34C759] text-[#A7F3D0] px-3 py-1 rounded-lg text-xs font-semibold">
+                      {testimonial.result}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Pricing */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#2D3139]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
+              Planos
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+              ESCOLHA SEU <span className="text-[#FFD100]">PLANO</span>
+            </h2>
+            <p className="text-lg md:text-xl text-[#B8BCC4] max-w-2xl mx-auto">
+              Comece grátis e escale quando precisar
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+            {/* Free Plan */}
+            <div className="bg-white/[0.03] border-2 border-white/10 rounded-3xl p-6 md:p-12 text-center">
+              <h3 className="text-xl md:text-2xl font-bold text-[#FFD100] mb-4">Plano Gratuito</h3>
+              <div className="text-4xl md:text-5xl lg:text-6xl font-black mb-2">
+                R$0<small className="text-xl md:text-2xl text-[#8B9099] font-medium">/mês</small>
+              </div>
+              <p className="text-sm md:text-base text-[#8B9099] mb-6 md:mb-8">1 laudo por mês</p>
+              <ul className="text-left space-y-3 md:space-y-4 mb-6 md:mb-10">
+                {["1 laudo/mês", "Checklists de NRs", "Upload de fotos com GPS", "PDF com marca d'água", "Modo offline", "Suporte por email"].map((feature) => (
+                  <li key={feature} className="flex gap-3 text-sm md:text-base">
+                    <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                    <span className={feature.includes("1 laudo") ? "font-bold" : ""}>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/api/auth/google"
+                className="block w-full bg-transparent border-2 border-white/20 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold hover:border-[#FFD100] hover:text-[#FFD100] transition-all"
+                data-testid="button-pricing-free"
+              >
+                Começar Grátis
+              </a>
+            </div>
+
+            {/* Professional Plan */}
+            <div className="bg-[#FFD100]/5 border-2 border-[#FFD100] rounded-3xl p-6 md:p-12 text-center relative transform md:scale-105">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FFD100] to-[#FFA500] text-[#1A1D23] px-4 md:px-6 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-black uppercase tracking-wide">
+                🔥 MAIS POPULAR
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-[#FFD100] mb-4 mt-2">Plano Profissional</h3>
+              <div className="text-4xl md:text-5xl lg:text-6xl font-black mb-2">
+                R$9<small className="text-xl md:text-2xl text-[#8B9099] font-medium">/mês</small>
+              </div>
+              <p className="text-sm md:text-base text-[#8B9099] mb-6 md:mb-8">30 laudos por mês</p>
+              <ul className="text-left space-y-3 md:space-y-4 mb-6 md:mb-10">
+                {["30 laudos/mês", "Todos os checklists de NRs", "Upload de fotos com GPS", "PDF sem marca d'água", "Logo da sua empresa", "Planos de ação inteligentes", "Dashboard com métricas", "Modo offline", "Suporte prioritário"].map((feature) => (
+                  <li key={feature} className="flex gap-3 text-sm md:text-base">
+                    <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                    <span className={feature.includes("30 laudos") || feature.includes("PDF sem") || feature.includes("Logo") || feature.includes("Planos") ? "font-bold" : ""}>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/pricing"
+                className="block w-full bg-[#FFD100] text-[#1A1D23] px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold hover:bg-[#E6BC00] transition-all shadow-lg"
+                data-testid="button-pricing-pro"
+              >
+                Assinar Agora - R$9/mês
+              </a>
+            </div>
+
+            {/* Business Plan */}
+            <div className="bg-white/[0.03] border-2 border-white/10 rounded-3xl p-6 md:p-12 text-center">
+              <h3 className="text-xl md:text-2xl font-bold text-[#FFD100] mb-4">Plano Negócios</h3>
+              <div className="text-4xl md:text-5xl lg:text-6xl font-black mb-2">
+                R$29,90<small className="text-xl md:text-2xl text-[#8B9099] font-medium">/mês</small>
+              </div>
+              <p className="text-sm md:text-base text-[#8B9099] mb-6 md:mb-8">Laudos ilimitados</p>
+              <ul className="text-left space-y-3 md:space-y-4 mb-6 md:mb-10">
+                {["Laudos ilimitados", "Múltiplas empresas/CNPJs", "Todos os checklists de NRs", "Upload de fotos com GPS", "PDF sem marca d'água + Logo", "Planos de ação inteligentes", "API de integração", "Dashboard avançado", "Modo offline", "Suporte dedicado"].map((feature) => (
+                  <li key={feature} className="flex gap-3 text-sm md:text-base">
+                    <span className="text-[#34C759] font-bold shrink-0">✓</span>
+                    <span className={feature.includes("ilimitados") || feature.includes("Múltiplas") || feature.includes("API") ? "font-bold" : ""}>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/pricing"
+                className="block w-full bg-[#FFD100] text-[#1A1D23] px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold hover:bg-[#E6BC00] transition-all"
+                data-testid="button-pricing-business"
+              >
+                Assinar Agora - R$29,90/mês
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. NRs Section */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#1A1D23]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
+              Normas Regulamentadoras
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+              CHECKLISTS BASEADOS NAS <span className="text-[#FFD100]">NRs</span>
+            </h2>
+            <p className="text-lg md:text-xl text-[#B8BCC4] max-w-2xl mx-auto">
+              Modelos prontos desenvolvidos por especialistas em segurança do trabalho
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            {[
+              { number: "NR 10", title: "Segurança em Instalações Elétricas", popular: true },
+              { number: "NR 18", title: "Construção Civil - Canteiros de Obras", popular: true },
+              { number: "NR 35", title: "Trabalho em Altura", popular: true },
+              { number: "NR 1", title: "Disposições Gerais e Gerenciamento de Riscos" },
+              { number: "NR 6", title: "Equipamentos de Proteção Individual" },
+              { number: "NR 12", title: "Máquinas e Equipamentos" },
+              { number: "NR 17", title: "Ergonomia no Trabalho" },
+              { number: "NR 23", title: "Proteção Contra Incêndios" },
+              { number: "NR 33", title: "Espaços Confinados" },
+              { number: "+20", title: "Outros Modelos Disponíveis" },
+            ].map((nr, i) => (
+              <div
+                key={i}
+                className={`bg-[#2D3139] rounded-xl p-6 md:p-8 text-center border transition-all hover:-translate-y-1 hover:border-[#FFD100]/30 hover:shadow-lg relative ${
+                  nr.popular ? "border-[#FFD100]" : "border-white/5"
+                }`}
+              >
+                {nr.popular && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#FFD100] text-[#1A1D23] rounded-full flex items-center justify-center text-xs font-black">
+                    ★
+                  </div>
+                )}
+                <div className="text-2xl md:text-3xl font-bold text-[#FFD100] mb-2">{nr.number}</div>
+                <div className="text-xs text-[#B8BCC4] leading-tight">{nr.title}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 9. FAQ */}
+      <section className="px-4 md:px-8 py-16 md:py-20 bg-[#2D3139]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block bg-[#FFD100]/15 text-[#FFD100] px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wide mb-4">
+              Perguntas Frequentes
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+              TIRE SUAS <span className="text-[#FFD100]">DÚVIDAS</span>
+            </h2>
+            <p className="text-lg md:text-xl text-[#B8BCC4]">
+              Respostas para as perguntas mais comuns
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              { q: "Como funciona o plano gratuito?", a: "Você pode criar até 3 laudos completos gratuitamente, sem precisar cadastrar cartão de crédito. Todos os recursos estão disponíveis, apenas os PDFs terão uma pequena marca d'água. É perfeito para testar a plataforma antes de assinar." },
+              { q: "Meus dados e dos meus clientes estão seguros?", a: "Sim! Utilizamos criptografia ponta a ponta, backups automáticos diários e estamos em compliance total com a LGPD. Seus dados ficam armazenados em servidores seguros na AWS (Amazon Web Services), a mesma infraestrutura usada por bancos e grandes empresas." },
+              { q: "Funciona offline? Como?", a: "Sim! Você pode fazer inspeções completas mesmo sem conexão à internet. O app salva todos os dados localmente no seu celular. Quando você conectar novamente à internet, tudo sincroniza automaticamente com a nuvem. Perfeito para canteiros de obras em áreas remotas." },
+              { q: "O sistema realmente gera relatórios de qualidade?", a: "Sim! Nossa plataforma foi desenvolvida com base em milhares de laudos técnicos reais de engenheiros e técnicos de segurança. O sistema analisa suas respostas do checklist, organiza as fotos e gera um relatório técnico completo, profissional e padronizado seguindo as melhores práticas do setor." },
+              { q: "Posso cancelar a qualquer momento?", a: "Sim, sem burocracia! O plano é mensal e você pode cancelar quando quiser direto no painel. Não há multas, taxas ou fidelidade. Mesmo após cancelar, você mantém acesso aos seus laudos já criados." },
+              { q: "Posso personalizar com a logo da minha empresa?", a: "Sim! No plano Negócios (R$29,90/mês) você pode adicionar o logo da sua empresa em todos os PDFs, personalizar cores e criar uma identidade visual única para seus laudos. Isso aumenta muito o profissionalismo e credibilidade." },
+              { q: "Quanto tempo leva para aprender a usar?", a: "Menos de 5 minutos! A interface é super intuitiva. Se você já faz laudos manualmente, vai entender imediatamente. Além disso, temos tutoriais em vídeo e suporte por email para qualquer dúvida." },
+              { q: "Funciona no computador ou só no celular?", a: "Funciona em ambos! Você pode acessar pelo navegador do computador (Windows, Mac, Linux) ou pelo app móvel (Android e iOS). Tudo sincroniza automaticamente entre os dispositivos." },
+            ].map((faq, i) => (
+              <div
+                key={i}
+                className="bg-white/[0.03] border border-white/[0.08] rounded-xl hover:border-[#FFD100]/30 transition-all overflow-hidden"
+              >
+                <div className="px-6 md:px-8 py-5 md:py-6 font-semibold text-base md:text-lg flex justify-between items-center cursor-pointer">
+                  <span>{faq.q}</span>
+                  <span className="text-2xl md:text-3xl text-[#FFD100] font-bold">+</span>
+                </div>
+                <div className="px-6 md:px-8 pb-5 md:pb-6 text-sm md:text-base text-[#B8BCC4] leading-relaxed">
+                  {faq.a}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 10. Final CTA */}
+      <section className="px-4 md:px-8 py-16 md:py-24 bg-gradient-to-br from-[#1A1D23] to-[#2D3139] text-center relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 bottom-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,209,0,0.1),transparent_50%)] pointer-events-none" />
+
+        <div className="max-w-4xl mx-auto relative z-10">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4 md:mb-6">
+            Pronto para Economizar <span className="text-[#FFD100]">Horas</span> de Trabalho?
+          </h2>
+          <p className="text-lg md:text-xl text-[#B8BCC4] mb-8 md:mb-10">
+            Comece grátis hoje. Teste 3 laudos completos sem cartão de crédito.
+          </p>
+          <a
+            href="/api/auth/google"
+            className="inline-flex items-center gap-3 bg-[#FFD100] text-[#1A1D23] px-8 md:px-12 py-4 md:py-5 rounded-xl font-bold text-base md:text-lg hover:bg-[#E6BC00] transition-all shadow-[0_8px_25px_rgba(255,209,0,0.4)] hover:shadow-[0_12px_35px_rgba(255,209,0,0.5)] hover:-translate-y-1"
+            data-testid="button-final-cta"
+          >
+            🚀 Começar Grátis Agora - 3 Laudos
+          </a>
+          <p className="mt-6 text-xs md:text-sm text-[#8B9099]">
+            ✓ Sem cartão de crédito • ✓ Cancele quando quiser • ✓ Suporte em português
+          </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-4 md:px-8 bg-[#1A1D23] border-t border-[#2D3139]">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-            {/* Brand */}
-            <div className="lg:col-span-1">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#FFD100] rounded-lg flex items-center justify-center">
-                  <Check className="w-5 h-5 text-[#1A1D23] stroke-[3]" />
-                </div>
-                <span className="font-display text-xl tracking-wider">
-                  SST<span className="text-[#FFD100]">Check</span>Pro
-                </span>
-              </div>
-              <p className="text-[#8B9099] text-sm leading-relaxed">
-                Aplicativo 100% brasileiro desenvolvido para profissionais de SST que buscam agilidade, profissionalismo e conformidade em suas inspeções de campo.
+      <footer className="px-4 md:px-8 py-12 md:py-16 bg-[#0D0F12] border-t border-white/10">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12 mb-8">
+            <div>
+              <h4 className="text-[#FFD100] text-lg font-bold mb-4">SST Check Pro</h4>
+              <p className="text-sm text-[#B8BCC4] leading-relaxed">
+                Plataforma completa de laudos de SST com Inteligência Artificial para profissionais que valorizam tempo e qualidade.
               </p>
             </div>
-
-            {/* Links */}
             <div>
-              <h4 className="font-bold mb-4">Produto</h4>
-              <ul className="space-y-3 text-[#8B9099]">
-                <li><a href="#funcionalidades" className="hover:text-[#FFD100] transition-colors">Funcionalidades</a></li>
-                <li><a href="/pricing" className="hover:text-[#FFD100] transition-colors">Planos e Preços</a></li>
-                <li><a href="#nrs" className="hover:text-[#FFD100] transition-colors">Modelos de Checklist</a></li>
+              <h4 className="text-[#FFD100] text-lg font-bold mb-4">Produto</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Funcionalidades</a></li>
+                <li><a href="/pricing" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Planos e Preços</a></li>
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Segurança</a></li>
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">API</a></li>
               </ul>
             </div>
-
             <div>
-              <h4 className="font-bold mb-4">Suporte</h4>
-              <ul className="space-y-3 text-[#8B9099]">
-                <li><a href="#" className="hover:text-[#FFD100] transition-colors">Central de Ajuda</a></li>
-                <li><a href="#" className="hover:text-[#FFD100] transition-colors">FAQ</a></li>
-                <li><a href="#" className="hover:text-[#FFD100] transition-colors">Contato</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold mb-4">Legal</h4>
-              <ul className="space-y-3 text-[#8B9099]">
-                <li><a href="#" className="hover:text-[#FFD100] transition-colors">Termos de Uso</a></li>
-                <li><a href="#" className="hover:text-[#FFD100] transition-colors">Política de Privacidade</a></li>
-                <li><a href="#" className="hover:text-[#FFD100] transition-colors">LGPD</a></li>
+              <h4 className="text-[#FFD100] text-lg font-bold mb-4">Empresa</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Sobre</a></li>
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Blog</a></li>
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Contato</a></li>
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Privacidade</a></li>
+                <li><a href="#" className="text-[#B8BCC4] hover:text-[#FFD100] transition-colors">Termos de Uso</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="pt-8 border-t border-[#2D3139] flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-[#8B9099] text-sm">
-              © 2025 SST Check Pro. Todos os direitos reservados.
-            </p>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setShowAdminModal(true)}
-                className="text-[#4A4E57] hover:text-[#8B9099] text-xs transition-colors"
-                data-testid="button-admin-login"
-              >
-                Admin
-              </button>
-              <div className="flex gap-3">
-                {["in", "ig", "yt"].map((social) => (
-                  <a
-                    key={social}
-                    href="#"
-                    className="w-10 h-10 bg-[#2D3139] rounded-lg flex items-center justify-center text-white font-bold text-sm hover:bg-[#FFD100] hover:text-[#1A1D23] transition-all"
-                  >
-                    {social}
-                  </a>
-                ))}
-              </div>
-            </div>
+          <div className="pt-8 border-t border-white/5 flex justify-between items-center">
+            <p className="text-sm text-[#8B9099]">© 2024 SST Check Pro. Todos os direitos reservados.</p>
+            <button
+              onClick={() => setShowAdminModal(true)}
+              className="text-[#4A4E57] hover:text-[#8B9099] text-xs transition-colors"
+              data-testid="button-admin"
+            >
+              Admin
+            </button>
           </div>
         </div>
       </footer>
@@ -620,7 +815,7 @@ export default function LandingPage() {
                 setAdminPassword("");
               }}
               className="absolute top-4 right-4 text-[#8B9099] hover:text-white transition-colors"
-              data-testid="button-close-admin-modal"
+              data-testid="button-close-admin"
             >
               <X className="w-5 h-5" />
             </button>
@@ -689,6 +884,23 @@ export default function LandingPage() {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes float-delayed {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float-delayed 3s ease-in-out infinite 1.5s;
+        }
+      `}</style>
     </div>
   );
 }

@@ -9,24 +9,42 @@ import { useToast } from "@/hooks/use-toast";
 const planDetails = [
   {
     slug: "free",
-    features: ["3 inspeções por mês", "Checklists básicos", "Relatório PDF simples"],
-  },
-  {
-    slug: "profissional",
     features: [
-      "10 inspeções por mês",
-      "Todos os checklists de NRs",
-      "Planos de ação com IA",
-      "Suporte prioritário",
+      "1 laudo por mês",
+      "Checklists de NRs",
+      "Upload de fotos com GPS",
+      "PDF com marca d'água",
+      "Modo offline",
+      "Suporte por email"
     ],
   },
   {
-    slug: "negocios",
+    slug: "professional",
     features: [
-      "30 inspeções por mês",
-      "Todos os checklists",
-      "Planos de ação com IA",
-      "Suporte dedicado",
+      "30 laudos por mês",
+      "Todos os checklists de NRs",
+      "Upload de fotos com GPS",
+      "PDF sem marca d'água",
+      "Logo da sua empresa",
+      "Planos de ação inteligentes",
+      "Dashboard com métricas",
+      "Modo offline",
+      "Suporte prioritário"
+    ],
+  },
+  {
+    slug: "business",
+    features: [
+      "Laudos ilimitados",
+      "Múltiplas empresas/CNPJs",
+      "Todos os checklists de NRs",
+      "Upload de fotos com GPS",
+      "PDF sem marca d'água + Logo",
+      "Planos de ação inteligentes",
+      "API de integração",
+      "Dashboard avançado",
+      "Modo offline",
+      "Suporte dedicado"
     ],
   },
 ];
@@ -72,8 +90,8 @@ export default function PricingPage() {
 
   // Payment Links diretos do Stripe
   const overrideCheckoutUrls: Record<string, string> = {
-    profissional: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400',
-    negocios: 'https://buy.stripe.com/00wcN61HN74LdVs45X38401',
+    professional: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400',
+    business: 'https://buy.stripe.com/00wcN61HN74LdVs45X38401',
   };
 
   const getDisplayPrice = (plan: any) => {
@@ -127,7 +145,7 @@ export default function PricingPage() {
             {(plans as any[])?.map((plan: any) => {
               const details = planDetails.find((d) => d.slug === plan.slug);
               const isCurrentPlan = currentSubscription?.plan?.slug === plan.slug;
-              const isPopular = plan.slug === "profissional";
+              const isPopular = plan.slug === "professional";
 
               return (
                 <div
@@ -212,6 +230,27 @@ export default function PricingPage() {
                           if (!isAuthenticated) {
                             window.location.href = "/api/auth/google";
                           } else {
+                            // Track InitiateCheckout event
+                            if (typeof window !== 'undefined' && (window as any).gtag) {
+                              (window as any).gtag('event', 'begin_checkout', {
+                                currency: 'BRL',
+                                value: plan.price / 100,
+                                items: [{
+                                  item_id: plan.slug,
+                                  item_name: plan.name,
+                                  price: plan.price / 100
+                                }]
+                              });
+                            }
+
+                            // Meta Pixel - InitiateCheckout
+                            if (typeof window !== 'undefined' && (window as any).fbq) {
+                              (window as any).fbq('track', 'InitiateCheckout', {
+                                currency: 'BRL',
+                                value: plan.price / 100
+                              });
+                            }
+
                             const directUrl = overrideCheckoutUrls[plan.slug];
                             if (directUrl) {
                               window.location.href = directUrl;

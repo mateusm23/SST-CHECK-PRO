@@ -42,6 +42,11 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-V5BXPN3K9D');
+
+      // Helper function to track conversions
+      window.trackConversion = function(eventName, params) {
+        gtag('event', eventName, params || {});
+      };
     </script>
 
     <!-- Meta Pixel Code -->
