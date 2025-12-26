@@ -1,0 +1,10 @@
+# Allow all bots
+User-agent: *
+Allow: /
+
+# Disallow private areas
+Disallow: /dashboard
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://www.sstcheckpro.com.br/sitemap.xml
