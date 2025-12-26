@@ -9,25 +9,23 @@ import { useToast } from "@/hooks/use-toast";
 const planDetails = [
   {
     slug: "free",
-    features: ["1 inspeção por mês", "Checklists básicos", "Relatório PDF simples"],
+    features: ["3 inspeções por mês", "Checklists básicos", "Relatório PDF simples"],
   },
   {
-    slug: "professional",
+    slug: "profissional",
     features: [
-      "30 inspeções por mês",
+      "10 inspeções por mês",
       "Todos os checklists de NRs",
-      "Upload de logo personalizada",
       "Planos de ação com IA",
       "Suporte prioritário",
     ],
   },
   {
-    slug: "business",
+    slug: "negocios",
     features: [
-      "Inspeções ilimitadas",
-      "Múltiplas empresas",
-      "API de integração",
-      "Dashboard avançado",
+      "30 inspeções por mês",
+      "Todos os checklists",
+      "Planos de ação com IA",
       "Suporte dedicado",
     ],
   },
@@ -72,22 +70,15 @@ export default function PricingPage() {
     }).format(price / 100);
   };
 
-  // Override de preços e URLs para checkout direto (Stripe buy links)
-  const overridePriceCents: Record<string, number> = {
-    professional: 900,
-    business: 2990,
-  };
-
+  // Payment Links diretos do Stripe
   const overrideCheckoutUrls: Record<string, string> = {
-    professional: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400',
-    business: 'https://buy.stripe.com/00wcN61HN74LdVs45X38401',
+    profissional: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400',
+    negocios: 'https://buy.stripe.com/00wcN61HN74LdVs45X38401',
   };
 
   const getDisplayPrice = (plan: any) => {
-    const override = overridePriceCents[plan.slug];
-    if (plan.price === 0 && !override) return 'Grátis';
-    const priceToFormat = override ?? plan.price;
-    return formatPrice(priceToFormat);
+    if (plan.price === 0) return 'Grátis';
+    return formatPrice(plan.price);
   };
 
   return (
@@ -136,7 +127,7 @@ export default function PricingPage() {
             {(plans as any[])?.map((plan: any) => {
               const details = planDetails.find((d) => d.slug === plan.slug);
               const isCurrentPlan = currentSubscription?.plan?.slug === plan.slug;
-              const isPopular = plan.slug === "professional";
+              const isPopular = plan.slug === "profissional";
 
               return (
                 <div
@@ -173,8 +164,8 @@ export default function PricingPage() {
                       </div>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-gray-900">
-                                             {plan.price === 0 && !overridePriceCents[plan.slug] ? "Grátis" : getDisplayPrice(plan)}
-                                           </span>
+                          {getDisplayPrice(plan)}
+                        </span>
                         {plan.price > 0 && (
                           <span className="text-sm text-gray-500">/mês</span>
                         )}
