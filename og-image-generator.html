@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f0f0f0;
+    }
+
+    .og-image {
+      width: 1200px;
+      height: 630px;
+      background: linear-gradient(135deg, #1a1d23 0%, #1a1d23 50%, #FFD100 50%, #FFD100 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: #FFD100;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .check-icon {
+      color: #1a1d23;
+      font-size: 48px;
+      font-weight: bold;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      font-size: 72px;
+      font-weight: 900;
+      color: white;
+      text-align: center;
+      line-height: 1.2;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .highlight {
+      color: #FFD100;
+    }
+
+    p {
+      margin: 20px 0 0 0;
+      font-family: 'Arial', sans-serif;
+      font-size: 32px;
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .badge {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      background: white;
+      color: #1a1d23;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-family: 'Arial', sans-serif;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="og-image">
+    <div class="badge">✨ Com IA</div>
+    <div class="logo">
+      <span class="check-icon">✓</span>
+    </div>
+    <h1>
+      SST<span class="highlight">Check</span> Pro
+    </h1>
+    <p>Sistema de Laudos de Segurança do Trabalho</p>
+  </div>
+
+  <script>
+    // Instruções para o usuário
+    alert('📸 COMO USAR:\n\n1. Pressione F11 para tela cheia\n2. Aperte F12 → Console\n3. Cole e execute: document.querySelector(".og-image").style.transform = "scale(1)"\n4. Use Windows + Shift + S para capturar\n5. Recorte exatamente a área colorida\n6. Salve como og-image.png em client/public/');
+  </script>
+</body>
+</html>

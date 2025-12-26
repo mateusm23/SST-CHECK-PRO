@@ -1,303 +1,179 @@
-# Deploy SST Check Pro - Railway
-
-Guia objetivo para colocar sua aplicação em produção.
-
----
-
-## FASE 1: PREPARAÇÃO
-
-### O que você precisa ter antes de começar:
-
-- [ ] Conta no Railway (criar em: railway.app)
-- [ ] Conta Google Cloud (console.cloud.google.com)
-- [ ] Conta Stripe (dashboard.stripe.com)
-- [ ] Repositório no GitHub (você já tem: mateusm23/SST-CHECK-PRO)
-
-### Informações que você vai precisar pegar:
-
-**Google OAuth:**
-1. Acesse: https://console.cloud.google.com/apis/credentials
-2. Se não tiver projeto, crie um
-3. Criar credenciais > ID do cliente OAuth 2.0
-4. Tipo: Aplicativo da Web
-5. Copie:
-   - Client ID (termina com .apps.googleusercontent.com)
-   - Client Secret
-
-**Stripe:**
-1. Acesse: https://dashboard.stripe.com/test/apikeys
-2. Copie (modo TESTE primeiro):
-   - Publishable key (começa com pk_test_)
-   - Secret key (começa com sk_test_)
-
----
-
-## FASE 2: RAILWAY - CRIAR PROJETO
-
-### Passo 1: Criar projeto com banco
-
-1. Acesse: https://railway.app
-2. Clique em "New Project"
-3. Selecione "Deploy PostgreSQL"
-4. Aguarde o PostgreSQL subir (1-2 minutos)
-
-### Passo 2: Copiar URL do banco
-
-1. Clique no serviço PostgreSQL criado
-2. Aba "Connect"
-3. Copie a URL completa (começa com postgresql://)
-4. Guarde essa URL - você vai usar daqui a pouco
-
-Exemplo: postgresql://postgres:senha@containers-us-west-123.railway.app:5432/railway
-
-### Passo 3: Adicionar sua aplicação
-
-1. No mesmo projeto, clique "New Service"
-2. Selecione "GitHub Repo"
-3. Autorize o Railway a acessar seu GitHub (se pedir)
-4. Selecione o repositório: mateusm23/SST-CHECK-PRO
-5. Railway vai detectar Node.js automaticamente
-
-Como saber se deu certo: Você verá 2 serviços no projeto (PostgreSQL + sua aplicação)
-
----
-
-## FASE 3: VARIÁVEIS DE AMBIENTE
-
-### Gerar SESSION_SECRET
-
-No seu computador, execute:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-Copie o valor gerado.
-
-### Adicionar variáveis no Railway
-
-1. Clique no serviço da sua aplicação (não o PostgreSQL)
-2. Aba "Variables"
-3. Adicione uma por uma:
-
-```
-DATABASE_URL=<cole_a_url_do_postgresql_que_voce_copiou>
-SESSION_SECRET=<cole_o_secret_que_voce_gerou>
-NODE_ENV=production
-GOOGLE_CLIENT_ID=<seu_client_id>.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=<seu_client_secret>
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
-```
-
-Deixe em branco por enquanto:
-- STRIPE_WEBHOOK_SECRET (vai configurar depois)
-- GEMINI_API_KEY (opcional)
-
-Como saber se deu certo: As variáveis aparecem na lista
-
----
-
-## FASE 4: DEPLOY
-
-O Railway faz deploy automático quando detecta as variáveis.
-
-### Acompanhar o deploy:
-
-1. Clique no serviço da aplicação
-2. Aba "Deployments"
-3. Aguarde o build completar (3-5 minutos)
-4. Status deve ficar "Success" (verde)
-
-### Pegar a URL da aplicação:
-
-1. Aba "Settings"
-2. Seção "Domains"
-3. Clique "Generate Domain"
-4. Copie a URL gerada (tipo: sst-check-pro-production.up.railway.app)
-
-Como saber se deu certo:
-- Build completo sem erros
-- Acessar a URL mostra sua aplicação
-
----
-
-## FASE 5: MIGRATIONS - CRIAR TABELAS NO BANCO
-
-### Instalar Railway CLI:
-
-```bash
-npm install -g @railway/cli
-```
-
-### Conectar ao seu projeto:
-
-```bash
-railway login
-```
-(Abre o navegador para autenticar)
-
-```bash
-railway link
-```
-(Selecione seu projeto da lista)
-
-### Criar as tabelas:
-
-```bash
-railway run npm run db:push
-```
-
-Aguarde a mensagem de sucesso.
-
-### Popular banco com planos de assinatura:
-
-```bash
-railway run npx tsx docs/deploy/init-database.ts
-```
-
-Você deve ver:
-- Plano "Gratuito" criado
-- Plano "Starter" criado
-- Plano "Pro" criado
-
-Como saber se deu certo: Mensagens de sucesso sem erros
-
----
-
-## FASE 6: CONFIGURAÇÕES FINAIS
-
-### A) Configurar Google OAuth
-
-Agora você tem a URL do Railway, precisa adicionar no Google:
-
-1. Google Cloud Console: https://console.cloud.google.com/apis/credentials
-2. Edite suas credenciais OAuth 2.0
-3. Em "URIs de redirecionamento autorizados", adicione:
-   ```
-   https://SUA-URL-RAILWAY.up.railway.app/api/auth/google/callback
-   ```
-   (Substitua SUA-URL-RAILWAY pela URL que você copiou)
-4. Salvar
-
-Como saber se deu certo: URI aparece na lista
-
-### B) Configurar Stripe Webhook
-
-1. Stripe Dashboard: https://dashboard.stripe.com/test/webhooks
-2. Clique "Add endpoint"
-3. URL do endpoint:
-   ```
-   https://SUA-URL-RAILWAY.up.railway.app/api/stripe/webhook
-   ```
-4. Selecione eventos para ouvir:
-   - checkout.session.completed
-   - customer.subscription.created
-   - customer.subscription.updated
-   - customer.subscription.deleted
-   - invoice.payment_succeeded
-5. Clique "Add endpoint"
-6. Copie o "Signing secret" (começa com whsec_...)
-
-### Adicionar webhook secret no Railway:
-
-1. Volte no Railway
-2. Serviço da aplicação > Variables
-3. Adicione:
-   ```
-   STRIPE_WEBHOOK_SECRET=whsec_...
-   ```
-
-Como saber se deu certo: Variável aparece na lista, Railway faz redeploy automático
-
----
-
-## FASE 7: TESTAR
-
-### Teste 1: Acessar aplicação
-- Abra: https://sua-url-railway.up.railway.app
-- Deve carregar a página inicial
-
-### Teste 2: Login Google
-- Clique em "Login com Google"
-- Faça login com sua conta
-- Deve redirecionar para o dashboard
-- Seu nome deve aparecer
-
-### Teste 3: Stripe (modo teste)
-- Vá em Pricing
-- Clique em um plano pago
-- Use cartão de teste: 4242 4242 4242 4242
-- Data: qualquer futura
-- CVV: qualquer
-- Complete o checkout
-- Deve voltar para a aplicação
-
-### Teste 4: Ver logs
-```bash
-railway logs
-```
-Não deve ter erros críticos
-
----
-
-## PROBLEMAS COMUNS
-
-### Login Google não funciona
-- Conferir se adicionou o redirect URI no Google Cloud Console
-- URL deve ser EXATAMENTE como está no Railway (https, sem barra no final)
-
-### Stripe webhook falha
-- Conferir STRIPE_WEBHOOK_SECRET está correto
-- Ver logs no Stripe Dashboard > Webhooks > seu endpoint
-
-### Erro de banco
-- Conferir DATABASE_URL está correta
-- Verificar se executou npm run db:push
-
-### Ver logs de erro
-```bash
-railway logs
-```
-
----
-
-## COMANDOS ÚTEIS
-
-Ver logs em tempo real:
-```bash
-railway logs
-```
-
-Executar comando no Railway:
-```bash
-railway run <comando>
-```
-
-Conectar ao banco:
-```bash
-railway connect postgres
-```
-
-Ver variáveis:
-```bash
-railway variables
-```
-
----
-
-## PRÓXIMOS PASSOS
-
-Depois que tudo funcionar:
-1. Mudar Stripe para modo produção (chaves reais)
-2. Conectar domínio customizado
-3. Adicionar storage de fotos (Cloudinary)
-
----
-
-## CUSTOS
-
-- Primeiro mês: GRÁTIS ($5 de créditos)
-- Depois: ~$5-10/mês (PostgreSQL + App)
-
----
-
-Dúvidas? Anote aqui e vamos resolvendo uma por uma.
+Análise Diagnóstica Completa - SST Check Pro
+🎯 FASE 1: ANÁLISE DE PRODUTO
+✅ Pontos Fortes
+1. Proposta de Valor Clara
+Nicho específico: Laudos de segurança do trabalho
+Problema real: Engenheiros precisam gerar laudos de forma rápida
+Freemium bem estruturado (3 laudos grátis para testar)
+2. Pricing Competitivo
+R$ 9,00 (Profissional) - Preço acessível para autônomos
+R$ 29,90 (Negócios) - Bom para pequenas empresas
+Escalabilidade: 3 → 10 → 30 laudos/mês faz sentido
+3. Tech Stack Moderna
+Google OAuth (login sem fricção)
+Stripe (pagamento profissional)
+PDF generation (entrega do produto)
+⚠️ Pontos Críticos para Venda
+1. Falta Prova Social
+❌ Sem depoimentos de clientes
+❌ Sem casos de uso/exemplos
+❌ Sem contador "X empresas confiam"
+IMPACTO: Conversão baixa, dificulta vendas B2B
+2. Proposta de Valor Não Explicada
+❌ Landing page não mostra COMO funciona
+❌ Não tem demo/vídeo do produto
+❌ Não explica economia de tempo
+IMPACTO: Visitante não entende valor, não converte
+3. Diferenciação Fraca
+❌ O que te diferencia de concorrentes?
+❌ Por que escolher você vs. fazer manual?
+❌ Qual a velocidade de geração? (5 min vs. 2 horas?)
+IMPACTO: Competição por preço, não por valor
+4. Funil de Conversão Incompleto
+❌ Sem email marketing / lead magnet
+❌ Sem onboarding guiado
+❌ Sem remarketing para quem não comprou
+IMPACTO: Perde 95% dos visitantes
+5. Retenção Não Estruturada
+❌ Sem notificações de limite chegando
+❌ Sem email "você ainda tem X laudos este mês"
+❌ Sem incentivo para upgrade mid-cycle
+IMPACTO: Churn alto, baixo LTV
+🚨 Riscos de Produto
+1. Upload de Fotos NÃO Implementado
+Você menciona "upload de fotos" mas não está funcionando
+RISCO ALTO: Cliente paga e não consegue usar recurso prometido
+2. IA (Gemini) Não Configurada
+"Planos de ação com IA" está nos features
+Mas GEMINI_API_KEY é opcional
+RISCO MÉDIO: Feature vendida mas não entregue
+3. Sem Trial Period
+Profissional/Negócios não tem trial de 7 dias
+RISCO: Barreira de entrada alta, conversão baixa
+💰 Potencial de Vendas (0-10)
+Aspecto	Nota	Comentário
+Pricing	8/10	Competitivo, mas pode testar R$ 19,90 e R$ 49,90
+Proposta de Valor	4/10	Existe mas não está comunicada
+Prova Social	0/10	Zero reviews, casos, números
+Onboarding	3/10	Muito básico, sem guia
+Diferenciação	2/10	Não fica claro por que escolher você
+Funil de Vendas	2/10	Muito linear, perde leads
+MÉDIA GERAL: 3.2/10 ⚠️
+🎯 Recomendações para Aumentar Vendas
+PRIORIDADE MÁXIMA (fazer nas próximas 2 semanas):
+Landing Page que Converte
+Hero: "Gere laudos de SST em 5 minutos (não 2 horas)"
+Vídeo de 30s mostrando o fluxo
+3 casos de uso reais
+CTA claro: "Comece Grátis - 3 laudos sem cartão"
+Onboarding Guiado
+Passo 1: Criar primeira inspeção (tutorial)
+Passo 2: Gerar primeiro PDF
+Passo 3: Mostrar upgrade com desconto
+Prova Social Inicial
+Pedir para 5 amigos engenheiros testarem
+Coletar depoimentos em vídeo curto
+Exibir na landing
+Lead Magnet
+Oferecer "Checklist Completo NR-12 PDF" grátis
+Capturar email
+Nutrir com email marketing
+MÉDIO PRAZO (1-2 meses):
+Features Prometidas
+✅ Implementar upload de fotos (Cloudinary)
+✅ Ativar IA para planos de ação
+Trial de 7 dias para planos pagos
+Growth Hacking
+Programa de indicação (indica 3, ganha 1 mês grátis)
+SEO para "laudo SST online"
+Anúncios no Google/LinkedIn
+💻 FASE 2: ANÁLISE DE CÓDIGO
+✅ Pontos Fortes Técnicos
+1. Arquitetura Sólida
+✅ Separação client/server/shared
+✅ Type safety (TypeScript + Zod)
+✅ ORM profissional (Drizzle)
+2. Autenticação Segura
+✅ Google OAuth bem implementado
+✅ Sessions em PostgreSQL (não em memória)
+✅ Expiration handling correto
+3. Pagamentos Profissionais
+✅ Stripe webhooks configurados
+✅ Payment Links (mais seguro que checkout API)
+✅ Validação de assinaturas
+🚨 Vulnerabilidades Críticas
+1. SEGURANÇA - Dados Sensíveis Expostos 🔴
+
+// .env foi commitado no Git!
+// Contém: DATABASE_URL com senha
+RISCO CRÍTICO: Qualquer um com acesso ao repo pode acessar seu banco SOLUÇÃO:
+Adicionar .env no .gitignore
+Revogar senha do banco e gerar nova
+NUNCA commitar credenciais
+2. SESSION_SECRET Fraco 🟡
+
+// Se SESSION_SECRET vazar, todas as sessões podem ser forjadas
+RISCO MÉDIO: Session hijacking SOLUÇÃO: Rotacionar SESSION_SECRET periodicamente 3. Sem Rate Limiting 🟡
+
+// Qualquer endpoint pode ser spammado
+app.post('/api/subscription/checkout', ...)
+RISCO MÉDIO: Abuse, DDoS, custos Stripe SOLUÇÃO: Implementar express-rate-limit 4. Sem Validação de Upload 🟡
+
+// Se implementar upload de fotos sem validação:
+// - Pode receber arquivos maliciosos
+// - Pode estourar storage
+RISCO MÉDIO: Ataque de arquivos, custos SOLUÇÃO: Validar tipo, tamanho, scan de vírus
+⚠️ Fragilidades de Código
+1. Falta Tratamento de Erros
+
+// server/index.ts - Muitos try/catch genéricos
+catch (error) {
+  console.error("Erro:", error); // Não loga contexto
+}
+IMPACTO: Debug difícil em produção SOLUÇÃO: Implementar logger estruturado (Winston/Pino) 2. Sem Monitoramento
+❌ Sem alertas se app cair
+❌ Sem métricas de performance
+❌ Sem tracking de erros SOLUÇÃO: Sentry para erros, Railway Analytics
+3. Queries Podem Ser Otimizadas
+
+// Sem indices em queries frequentes
+// Sem pagination em listas
+IMPACTO: Lentidão com muitos dados SOLUÇÃO: Adicionar indices, implementar paginação 4. Frontend Não Otimizado
+Bundle de 942 KB (muito grande)
+Sem code splitting agressivo
+Sem lazy loading de componentes IMPACTO: Carregamento lento, especialmente mobile SOLUÇÃO: Dynamic imports, route-based splitting
+5. Sem Testes
+❌ Zero testes unitários
+❌ Zero testes de integração
+❌ Zero testes E2E RISCO ALTO: Cada mudança pode quebrar algo SOLUÇÃO: Vitest + Playwright
+🔧 Débito Técnico
+1. Código Duplicado
+Validações Zod repetidas
+Lógica de pricing em múltiplos lugares
+2. Magic Numbers
+
+monthlyLimit: 3, 10, 30 // hardcoded
+price: 900, 2990 // hardcoded
+SOLUÇÃO: Constantes centralizadas 3. TODOs não resolvidos
+"Stripe initialization skipped" (mensagem confusa)
+Upload de logo prometido mas não implementado
+📊 Qualidade de Código (0-10)
+Aspecto	Nota	Comentário
+Arquitetura	8/10	Bem estruturado, boas práticas
+Segurança	4/10	.env exposto é crítico
+Performance	6/10	OK agora, problemas futuros
+Manutenibilidade	7/10	TypeScript ajuda, falta testes
+Escalabilidade	6/10	Aguenta até ~1000 usuários
+Monitoramento	1/10	Praticamente zero
+MÉDIA GERAL: 5.3/10 ⚠️
+🎯 AÇÕES IMEDIATAS (próximas 48h)
+Segurança Crítica:
+❗ Adicionar .env ao .gitignore
+❗ Remover .env do histórico Git
+❗ Trocar DATABASE_URL (nova senha)
+❗ Rotacionar SESSION_SECRET
+Produto Mínimo:
+Criar landing page básica com proposta de valor
+Adicionar trial de 7 dias
+Implementar upload de fotos OU remover da promessa
+Quer que eu te ajude com alguma dessas ações agora?
