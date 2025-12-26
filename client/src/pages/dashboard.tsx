@@ -128,13 +128,12 @@ export default function DashboardPage() {
         });
       }
 
-      const res = await apiRequest("POST", "/api/subscription/checkout", { planSlug: "professional" });
-      return res.json();
+      // Redirect directly to Stripe checkout
+      window.location.href = 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400';
+      return Promise.resolve({ url: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400' });
     },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
+    onSuccess: () => {
+      // No need to redirect here, already done in mutationFn
     },
   });
 

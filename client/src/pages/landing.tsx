@@ -610,7 +610,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <a
-                href="/pricing"
+                href="https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400"
                 className="block w-full bg-[#FFD100] text-[#1A1D23] px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold hover:bg-[#E6BC00] transition-all shadow-lg"
                 data-testid="button-pricing-pro"
               >
@@ -634,7 +634,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <a
-                href="/pricing"
+                href="https://buy.stripe.com/00wcN61HN74LdVs45X38401"
                 className="block w-full bg-[#FFD100] text-[#1A1D23] px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold hover:bg-[#E6BC00] transition-all"
                 data-testid="button-pricing-business"
               >
