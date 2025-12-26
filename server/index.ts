@@ -4,6 +4,9 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import { WebhookHandlers } from './webhookHandlers';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import cors from 'cors';
 
 const app = express();
 const httpServer = createServer(app);
@@ -35,6 +38,47 @@ async function initStripe() {
 }
 
 (async () => {
+  // Segurança: Helmet para headers HTTP seguros
+  app.use(helmet({
+    contentSecurityPolicy: false, // Desabilitado para não conflitar com Vite/React
+  }));
+
+  // CORS configurado adequadamente
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? [process.env.FRONTEND_URL || 'https://sst-check-pro-production.up.railway.app']
+    : ['http://localhost:5000', 'http://localhost:5173'];
+
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }));
+
+  // Rate limiting global (100 requisições por 15 minutos)
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Muitas requisições deste IP, tente novamente em 15 minutos',
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(limiter);
+
+  // Rate limiting mais restritivo para autenticação
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: 'Muitas tentativas de login, tente novamente em 15 minutos',
+  });
+  app.use('/api/auth', authLimiter);
+
+  // Rate limiting para Stripe checkout
+  const checkoutLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: 'Muitas tentativas de checkout, tente novamente em 15 minutos',
+  });
+  app.use('/api/subscription/checkout', checkoutLimiter);
+
   app.post(
     '/api/stripe/webhook',
     express.raw({ type: 'application/json' }),
