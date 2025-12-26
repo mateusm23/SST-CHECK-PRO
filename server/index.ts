@@ -101,8 +101,13 @@ async function initStripe() {
     next();
   });
 
+  // Health check para Railway
+  app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
   await initStripe();
-  
+
   await seedDatabase();
 
   await registerRoutes(httpServer, app);
