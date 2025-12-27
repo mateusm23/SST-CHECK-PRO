@@ -11,18 +11,29 @@ async function updateStripePrices() {
   console.log('🔄 Atualizando Price IDs do Stripe...\n');
 
   try {
-    // Atualizar Plano Profissional
+    // Atualizar Plano Profissional (tenta ambos os slugs)
     const professionalPriceId = process.env.STRIPE_PROFESSIONAL_PRICE_ID;
     if (professionalPriceId) {
-      const result = await db
+      // Tenta primeiro com 'professional' (inglês)
+      let result = await db
         .update(subscriptionPlans)
         .set({ stripePriceId: professionalPriceId })
         .where(eq(subscriptionPlans.slug, 'professional'))
         .returning();
 
+      // Se não encontrar, tenta com 'profissional' (português)
+      if (result.length === 0) {
+        result = await db
+          .update(subscriptionPlans)
+          .set({ stripePriceId: professionalPriceId })
+          .where(eq(subscriptionPlans.slug, 'profissional'))
+          .returning();
+      }
+
       if (result.length > 0) {
         console.log('✅ Plano Profissional atualizado:');
         console.log(`   ID: ${result[0].id}`);
+        console.log(`   Slug: ${result[0].slug}`);
         console.log(`   Nome: ${result[0].name}`);
         console.log(`   Stripe Price ID: ${result[0].stripePriceId}\n`);
       } else {
@@ -32,18 +43,29 @@ async function updateStripePrices() {
       console.log('⚠️  STRIPE_PROFESSIONAL_PRICE_ID não configurado\n');
     }
 
-    // Atualizar Plano Negócios
+    // Atualizar Plano Negócios (tenta ambos os slugs)
     const businessPriceId = process.env.STRIPE_BUSINESS_PRICE_ID;
     if (businessPriceId) {
-      const result = await db
+      // Tenta primeiro com 'business' (inglês)
+      let result = await db
         .update(subscriptionPlans)
         .set({ stripePriceId: businessPriceId })
         .where(eq(subscriptionPlans.slug, 'business'))
         .returning();
 
+      // Se não encontrar, tenta com 'negocios' (português)
+      if (result.length === 0) {
+        result = await db
+          .update(subscriptionPlans)
+          .set({ stripePriceId: businessPriceId })
+          .where(eq(subscriptionPlans.slug, 'negocios'))
+          .returning();
+      }
+
       if (result.length > 0) {
         console.log('✅ Plano Negócios atualizado:');
         console.log(`   ID: ${result[0].id}`);
+        console.log(`   Slug: ${result[0].slug}`);
         console.log(`   Nome: ${result[0].name}`);
         console.log(`   Stripe Price ID: ${result[0].stripePriceId}\n`);
       } else {
@@ -61,7 +83,7 @@ async function updateStripePrices() {
     console.table(allPlans.map(plan => ({
       'Slug': plan.slug,
       'Nome': plan.name,
-      'Preço': `R$ ${(plan.price / 100).toFixed(2)}`,
+      'Preço': `R$ ${((plan.price || 0) / 100).toFixed(2)}`,
       'Stripe Price ID': plan.stripePriceId || '❌ Não configurado'
     })));
 
