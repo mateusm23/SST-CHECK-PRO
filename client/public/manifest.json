@@ -1,0 +1,24 @@
+{
+  "name": "SST Check Pro - Sistema de Inspeção e Laudos SST",
+  "short_name": "SST Check Pro",
+  "description": "Plataforma completa para criação de laudos de inspeção de SST com IA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A1D23",
+  "theme_color": "#FFD100",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
