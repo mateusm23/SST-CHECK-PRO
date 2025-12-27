@@ -220,13 +220,16 @@ export default function PricingPage() {
                         </Button>
                       </Link>
                     ) : (
-                        <Button
+                      <Button
                         className={`w-full font-bold ${
                           isPopular
                             ? "bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00]"
                             : "bg-gray-900 text-white hover:bg-gray-800"
                         }`}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+
                           // Track InitiateCheckout event
                           if (typeof window !== 'undefined' && (window as any).gtag) {
                             (window as any).gtag('event', 'begin_checkout', {
@@ -257,10 +260,10 @@ export default function PricingPage() {
                             console.error('Checkout URL not found for plan:', plan.slug);
                           }
                         }}
-                        disabled={checkoutMutation.isPending}
                         data-testid={`button-select-${plan.slug}`}
+                        type="button"
                       >
-                        {checkoutMutation.isPending ? "Processando..." : "Assinar Agora"}
+                        Assinar Agora
                       </Button>
                     )}
                   </div>
