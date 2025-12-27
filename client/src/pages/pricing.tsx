@@ -1,10 +1,8 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft, Smartphone, Crown } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
 
 const planDetails = [
   {
@@ -51,7 +49,6 @@ const planDetails = [
 
 export default function PricingPage() {
   const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ["/api/subscription/plans"],
@@ -60,25 +57,6 @@ export default function PricingPage() {
   const { data: currentSubscription } = useQuery<{ plan?: { slug: string } }>({
     queryKey: ["/api/subscription"],
     enabled: isAuthenticated,
-  });
-
-  const checkoutMutation = useMutation({
-    mutationFn: async (planSlug: string) => {
-      const res = await apiRequest("POST", "/api/subscription/checkout", { planSlug });
-      return res.json();
-    },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao processar pagamento",
-        variant: "destructive",
-      });
-    },
   });
 
   const formatPrice = (price: number) => {
@@ -252,12 +230,19 @@ export default function PricingPage() {
                           }
 
                           // Always redirect directly to Stripe checkout
+                          console.log('Plan slug:', plan.slug);
+                          console.log('Available URLs:', overrideCheckoutUrls);
+
                           const directUrl = overrideCheckoutUrls[plan.slug];
+                          console.log('Direct URL found:', directUrl);
+
                           if (directUrl) {
+                            console.log('Redirecting to:', directUrl);
                             window.location.href = directUrl;
                           } else {
                             // Fallback if URL not found
                             console.error('Checkout URL not found for plan:', plan.slug);
+                            alert(`URL de checkout não encontrada para o plano: ${plan.slug}`);
                           }
                         }}
                         data-testid={`button-select-${plan.slug}`}
