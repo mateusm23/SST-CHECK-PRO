@@ -1,8 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft, Smartphone, Crown } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 const planDetails = [
   {
@@ -49,6 +51,7 @@ const planDetails = [
 
 export default function PricingPage() {
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ["/api/subscription/plans"],
@@ -59,17 +62,30 @@ export default function PricingPage() {
     enabled: isAuthenticated,
   });
 
+  const checkoutMutation = useMutation({
+    mutationFn: async (planSlug: string) => {
+      const res = await apiRequest("POST", "/api/subscription/checkout", { planSlug });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao processar pagamento",
+        description: error.message || "Tente novamente ou entre em contato com o suporte",
+        variant: "destructive",
+      });
+    },
+  });
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
     }).format(price / 100);
-  };
-
-  // Payment Links diretos do Stripe
-  const overrideCheckoutUrls: Record<string, string> = {
-    professional: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400',
-    business: 'https://buy.stripe.com/00wcN61HN74LdVs45X38401',
   };
 
   const getDisplayPrice = (plan: any) => {
@@ -229,20 +245,20 @@ export default function PricingPage() {
                             });
                           }
 
-                          // Always redirect directly to Stripe checkout
-                          console.log('Plan slug:', plan.slug);
-                          console.log('Available URLs:', overrideCheckoutUrls);
-
-                          const directUrl = overrideCheckoutUrls[plan.slug];
-                          console.log('Direct URL found:', directUrl);
-
-                          if (directUrl) {
-                            console.log('Redirecting to:', directUrl);
-                            window.location.href = directUrl;
+                          // Se usuário estiver logado, usa API de checkout (com metadata do userId)
+                          if (isAuthenticated) {
+                            console.log('Usuário logado - usando API de checkout para plano:', plan.slug);
+                            checkoutMutation.mutate(plan.slug);
                           } else {
-                            // Fallback if URL not found
-                            console.error('Checkout URL not found for plan:', plan.slug);
-                            alert(`URL de checkout não encontrada para o plano: ${plan.slug}`);
+                            // Usuário não logado - redireciona para login primeiro
+                            console.log('Usuário não logado - redirecionando para login');
+                            toast({
+                              title: "Login necessário",
+                              description: "Faça login para continuar com a assinatura",
+                            });
+                            // Salva o plano desejado no localStorage para redirecionar após login
+                            localStorage.setItem('pendingPlanSlug', plan.slug);
+                            window.location.href = '/api/auth/google';
                           }
                         }}
                         data-testid={`button-select-${plan.slug}`}
