@@ -222,41 +222,39 @@ export default function PricingPage() {
                     ) : (
                         <Button
                         className={`w-full font-bold ${
-                          isPopular 
-                            ? "bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00]" 
+                          isPopular
+                            ? "bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00]"
                             : "bg-gray-900 text-white hover:bg-gray-800"
                         }`}
                         onClick={() => {
-                          if (!isAuthenticated) {
-                            window.location.href = "/api/auth/google";
+                          // Track InitiateCheckout event
+                          if (typeof window !== 'undefined' && (window as any).gtag) {
+                            (window as any).gtag('event', 'begin_checkout', {
+                              currency: 'BRL',
+                              value: plan.price / 100,
+                              items: [{
+                                item_id: plan.slug,
+                                item_name: plan.name,
+                                price: plan.price / 100
+                              }]
+                            });
+                          }
+
+                          // Meta Pixel - InitiateCheckout
+                          if (typeof window !== 'undefined' && (window as any).fbq) {
+                            (window as any).fbq('track', 'InitiateCheckout', {
+                              currency: 'BRL',
+                              value: plan.price / 100
+                            });
+                          }
+
+                          // Always redirect directly to Stripe checkout
+                          const directUrl = overrideCheckoutUrls[plan.slug];
+                          if (directUrl) {
+                            window.location.href = directUrl;
                           } else {
-                            // Track InitiateCheckout event
-                            if (typeof window !== 'undefined' && (window as any).gtag) {
-                              (window as any).gtag('event', 'begin_checkout', {
-                                currency: 'BRL',
-                                value: plan.price / 100,
-                                items: [{
-                                  item_id: plan.slug,
-                                  item_name: plan.name,
-                                  price: plan.price / 100
-                                }]
-                              });
-                            }
-
-                            // Meta Pixel - InitiateCheckout
-                            if (typeof window !== 'undefined' && (window as any).fbq) {
-                              (window as any).fbq('track', 'InitiateCheckout', {
-                                currency: 'BRL',
-                                value: plan.price / 100
-                              });
-                            }
-
-                            const directUrl = overrideCheckoutUrls[plan.slug];
-                            if (directUrl) {
-                              window.location.href = directUrl;
-                            } else {
-                              checkoutMutation.mutate(plan.slug);
-                            }
+                            // Fallback if URL not found
+                            console.error('Checkout URL not found for plan:', plan.slug);
                           }
                         }}
                         disabled={checkoutMutation.isPending}
