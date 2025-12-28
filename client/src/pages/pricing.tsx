@@ -2,9 +2,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft, Smartphone, Crown } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 const planDetails = [
   {
@@ -52,6 +53,7 @@ const planDetails = [
 export default function PricingPage() {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [location] = useLocation();
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ["/api/subscription/plans"],
@@ -80,6 +82,19 @@ export default function PricingPage() {
       });
     },
   });
+
+  // Auto-trigger checkout se vier com ?plan=professional ou ?plan=business
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const planSlug = params.get('plan');
+
+    if (planSlug && isAuthenticated && (planSlug === 'professional' || planSlug === 'business')) {
+      // Remove o parâmetro da URL
+      window.history.replaceState({}, '', '/pricing');
+      // Dispara o checkout automaticamente
+      checkoutMutation.mutate(planSlug);
+    }
+  }, [isAuthenticated, location]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("pt-BR", {

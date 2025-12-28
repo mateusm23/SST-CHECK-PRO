@@ -98,15 +98,33 @@ export async function setupGoogleAuth(app: Express) {
     done(null, user);
   });
 
-  app.get("/api/auth/google", passport.authenticate("google", {
-    scope: ["profile", "email"],
-    prompt: "select_account" // Força Google a sempre mostrar seleção de conta
-  }));
+  app.get("/api/auth/google", (req, res, next) => {
+    // Salva o plano desejado na session (se fornecido)
+    const planSlug = req.query.plan as string;
+    if (planSlug && (planSlug === 'professional' || planSlug === 'business')) {
+      (req.session as any).pendingPlanSlug = planSlug;
+    }
+
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+      prompt: "select_account" // Força Google a sempre mostrar seleção de conta
+    })(req, res, next);
+  });
 
   app.get(
     "/api/auth/google/callback",
     passport.authenticate("google", { failureRedirect: "/?error=auth_failed" }),
     (req, res) => {
+      // Verifica se há um plano pendente na session
+      const pendingPlanSlug = (req.session as any).pendingPlanSlug;
+
+      if (pendingPlanSlug) {
+        // Remove da session
+        delete (req.session as any).pendingPlanSlug;
+        // Redireciona para a página de pricing com o plano pré-selecionado
+        return res.redirect(`/pricing?plan=${pendingPlanSlug}`);
+      }
+
       res.redirect("/dashboard");
     }
   );
