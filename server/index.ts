@@ -58,29 +58,25 @@ async function initStripe() {
     credentials: true,
   }));
 
-  // Rate limiting global (100 requisições por 15 minutos)
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Muitas requisições deste IP, tente novamente em 15 minutos',
+  // Rate limiting APENAS em rotas sensíveis (sem limite global)
+
+  // Rate limiting para autenticação (proteção contra brute force)
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 30, // 30 tentativas de login
+    message: 'Muitas tentativas de login, tente novamente em 15 minutos',
     standardHeaders: true,
     legacyHeaders: false,
   });
-  app.use(limiter);
-
-  // Rate limiting para autenticação
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20, // Aumentado para fase de testes
-    message: 'Muitas tentativas de login, tente novamente em 15 minutos',
-  });
   app.use('/api/auth', authLimiter);
 
-  // Rate limiting para Stripe checkout
+  // Rate limiting para Stripe checkout (proteção contra fraude)
   const checkoutLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 10,
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 15, // 15 tentativas de checkout
     message: 'Muitas tentativas de checkout, tente novamente em 15 minutos',
+    standardHeaders: true,
+    legacyHeaders: false,
   });
   app.use('/api/subscription/checkout', checkoutLimiter);
 
