@@ -114,17 +114,67 @@ export async function setupGoogleAuth(app: Express) {
   app.get(
     "/api/auth/google/callback",
     passport.authenticate("google", { failureRedirect: "/?error=auth_failed" }),
-    (req, res) => {
+    async (req, res) => {
       // Verifica se há um plano pendente na session
       const pendingPlanSlug = (req.session as any).pendingPlanSlug;
 
       if (pendingPlanSlug) {
         // Remove da session
         delete (req.session as any).pendingPlanSlug;
-        // Redireciona para a página de pricing com o plano pré-selecionado
-        return res.redirect(`/pricing?plan=${pendingPlanSlug}`);
+
+        try {
+          // Importa as dependências necessárias
+          const { storage } = await import("../storage");
+          const { getUncachableStripeClient } = await import("../stripeClient");
+
+          const user = req.user as any;
+          const userId = user.claims.sub;
+
+          // Busca o plano no banco
+          const plan = await storage.getSubscriptionPlanBySlug(pendingPlanSlug);
+
+          if (!plan || !plan.stripePriceId) {
+            console.error(`Plano ${pendingPlanSlug} não encontrado ou sem Price ID`);
+            return res.redirect(`/pricing?error=invalid_plan`);
+          }
+
+          const stripe = await getUncachableStripeClient();
+          let userSub = await storage.getUserSubscription(userId);
+
+          // Cria ou recupera Customer ID no Stripe
+          let customerId = userSub?.stripeCustomerId;
+          if (!customerId) {
+            const customer = await stripe.customers.create({
+              metadata: { userId },
+              email: user.email,
+            });
+            customerId = customer.id;
+
+            if (userSub) {
+              await storage.updateUserSubscription(userId, { stripeCustomerId: customerId });
+            }
+          }
+
+          // Cria sessão de checkout do Stripe
+          const session = await stripe.checkout.sessions.create({
+            customer: customerId,
+            payment_method_types: ['card'],
+            line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+            mode: 'subscription',
+            success_url: `${req.protocol}://${req.get('host')}/dashboard?success=true`,
+            cancel_url: `${req.protocol}://${req.get('host')}/pricing?canceled=true`,
+          });
+
+          // Redireciona DIRETO para o Stripe Checkout
+          return res.redirect(session.url!);
+
+        } catch (error) {
+          console.error("Erro ao criar checkout após login:", error);
+          return res.redirect(`/pricing?error=checkout_failed`);
+        }
       }
 
+      // Se não há plano pendente, redireciona normalmente pro dashboard
       res.redirect("/dashboard");
     }
   );
