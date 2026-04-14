@@ -128,8 +128,15 @@ export async function registerRoutes(
       });
 
       res.json({ url: session.url });
-    } catch (error) {
-      console.error("Checkout error:", error);
+    } catch (error: any) {
+      console.error("Checkout error:", {
+        message: error?.message,
+        type: error?.type,
+        code: error?.code,
+        stripeKey: process.env.STRIPE_SECRET_KEY ? `...${process.env.STRIPE_SECRET_KEY.slice(-4)}` : "MISSING",
+        professionalPriceId: process.env.STRIPE_PROFESSIONAL_PRICE_ID || "MISSING",
+        businessPriceId: process.env.STRIPE_BUSINESS_PRICE_ID || "MISSING",
+      });
       res.status(500).json({ message: "Failed to create checkout session" });
     }
   });
