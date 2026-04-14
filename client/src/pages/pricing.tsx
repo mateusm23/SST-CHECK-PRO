@@ -10,42 +10,38 @@ import { useEffect } from "react";
 const planDetails = [
   {
     slug: "free",
+    description: "Para conhecer a plataforma",
     features: [
       "1 laudo por mês",
-      "Checklists de NRs",
-      "Upload de fotos com GPS",
-      "PDF com marca d'água",
-      "Modo offline",
-      "Suporte por email"
+      "Checklist NR-18 completo",
+      "Fotos nas não-conformidades",
+      "Geração automática de PDF",
+      "Planos de ação manuais",
     ],
   },
   {
     slug: "professional",
+    description: "Para profissionais autônomos",
     features: [
       "30 laudos por mês",
-      "Todos os checklists de NRs",
-      "Upload de fotos com GPS",
-      "PDF sem marca d'água",
-      "Logo da sua empresa",
-      "Planos de ação inteligentes",
-      "Dashboard com métricas",
-      "Modo offline",
-      "Suporte prioritário"
+      "Checklist NR-18 completo",
+      "Fotos nas não-conformidades",
+      "Geração automática de PDF",
+      "Planos de ação gerados por IA",
+      "Suporte por e-mail em até 24h",
     ],
   },
   {
     slug: "business",
+    description: "Para empresas e equipes",
     features: [
       "Laudos ilimitados",
-      "Múltiplas empresas/CNPJs",
-      "Todos os checklists de NRs",
-      "Upload de fotos com GPS",
-      "PDF sem marca d'água + Logo",
-      "Planos de ação inteligentes",
-      "API de integração",
-      "Dashboard avançado",
-      "Modo offline",
-      "Suporte dedicado"
+      "Múltiplas empresas cadastradas",
+      "Checklist NR-18 completo",
+      "Fotos nas não-conformidades",
+      "Geração automática de PDF",
+      "Planos de ação gerados por IA",
+      "Suporte via WhatsApp",
     ],
   },
 ];
@@ -141,7 +137,7 @@ export default function PricingPage() {
             Escolha seu Plano
           </h1>
           <p className="text-gray-500">
-            Selecione o plano ideal para suas necessidades
+            Cancele quando quiser. Sem fidelidade.
           </p>
         </div>
 
@@ -163,31 +159,17 @@ export default function PricingPage() {
                     isPopular ? "ring-2 ring-[#FFD100]" : ""
                   }`}
                 >
-                  {plan.price > 0 && (
-                    <div className="bg-red-500 text-white text-center py-1.5 text-xs font-bold uppercase tracking-wide">
-                      20% de Desconto
-                    </div>
-                  )}
-                  {isPopular && !plan.price && (
+                  {isPopular && (
                     <div className="bg-[#FFD100] text-[#1a1d23] text-center py-1.5 text-xs font-bold uppercase tracking-wide">
-                      Mais Popular
+                      ⭐ Mais Popular
                     </div>
                   )}
-                  {isPopular && plan.price > 0 && (
-                    <div className="bg-[#FFD100] text-[#1a1d23] text-center py-1.5 text-xs font-bold uppercase tracking-wide">
-                      Mais Popular
-                    </div>
-                  )}
-                  
+
                   <div className="p-5">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-start justify-between mb-1">
                       <div>
                         <h3 className="font-bold text-lg text-gray-900">{plan.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {plan.monthlyLimit === -1
-                            ? "Inspeções ilimitadas"
-                            : `${plan.monthlyLimit} inspeção${plan.monthlyLimit > 1 ? "s" : ""} por mês`}
-                        </p>
+                        <p className="text-xs text-gray-400">{details?.description}</p>
                       </div>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-gray-900">
@@ -198,7 +180,9 @@ export default function PricingPage() {
                         )}
                       </div>
                     </div>
-                    
+
+                    <div className="border-t border-gray-100 my-3" />
+
                     <ul className="space-y-2 mb-4">
                       {details?.features.map((feature) => (
                         <li key={feature} className="flex items-center gap-2 text-sm text-gray-600">
@@ -289,20 +273,32 @@ export default function PricingPage() {
           </div>
         )}
 
+        {/* Garantia */}
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-400">
+            🔒 Pagamento seguro via Stripe · Cancele a qualquer momento · Sem taxas ocultas
+          </p>
+        </div>
+
         {/* CTA */}
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="font-bold text-lg text-gray-900 mb-2">Dúvidas?</h2>
+            <h2 className="font-bold text-lg text-gray-900 mb-1">Ficou com dúvida?</h2>
             <p className="text-gray-500 mb-4 text-sm">
-              Nossa equipe está pronta para ajudar você
+              Fale direto com a gente pelo WhatsApp
             </p>
-            <Button 
-              variant="outline" 
-              className="border-[#FFD100] text-[#1a1d23] hover:bg-[#FFD100]"
+            <a
+              href="https://wa.me/5511999999999?text=Olá%2C%20tenho%20uma%20dúvida%20sobre%20o%20SST%20Check%20Pro"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <Smartphone className="w-4 h-4 mr-2" />
-              Falar com Consultor
-            </Button>
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white font-bold"
+              >
+                <Smartphone className="w-4 h-4 mr-2" />
+                Chamar no WhatsApp
+              </Button>
+            </a>
           </div>
         </div>
       </main>
