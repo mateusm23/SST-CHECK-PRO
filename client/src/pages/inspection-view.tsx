@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Download,
   Share2,
-  Printer,
   FileText,
   AlertTriangle,
   Loader2,
@@ -202,36 +201,73 @@ export default function InspectionViewPage() {
     setIsGeneratingPDF(true);
     toast({ title: "Gerando PDF...", description: "Aguarde enquanto preparamos seu documento" });
     try {
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 3,
+      // Garante que todas as imagens estejam carregadas antes de capturar
+      const images = pdfRef.current.querySelectorAll("img");
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete) { resolve(); return; }
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
+
+      const element = pdfRef.current;
+      const naturalHeight = element.scrollHeight;
+
+      const canvas = await html2canvas(element, {
+        scale: 2.5,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
         width: 794,
+        height: naturalHeight,
         windowWidth: 794,
+        windowHeight: naturalHeight,
         logging: false,
+        imageTimeout: 15000,
       });
+
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfWidth = 210;
-      const pdfHeight = 297;
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      let heightLeft = imgHeight;
-      let position = 0;
-      let pageNum = 0;
-      while (heightLeft > 0) {
-        if (pageNum > 0) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-        position -= pdfHeight;
-        pageNum++;
+      const PAGE_W = 210;
+      const PAGE_H = 297;
+
+      // px por mm no canvas
+      const pxPerMm = canvas.width / PAGE_W;
+      const pageHeightPx = PAGE_H * pxPerMm;
+      const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) pdf.addPage();
+
+        // Cria canvas temporário para esta página
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = Math.min(pageHeightPx, canvas.height - page * pageHeightPx);
+        const ctx = pageCanvas.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(
+          canvas,
+          0, page * pageHeightPx,          // origem no canvas grande
+          canvas.width, pageCanvas.height,  // tamanho a copiar
+          0, 0,                             // destino no canvas pequeno
+          canvas.width, pageCanvas.height
+        );
+
+        const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
+        const pageImgHeight = (pageCanvas.height / pxPerMm);
+        pdf.addImage(imgData, "JPEG", 0, 0, PAGE_W, pageImgHeight);
       }
+
       const fileName = `inspecao-sst-${inspectionId.toString().padStart(4, "0")}-${new Date().toISOString().split("T")[0]}.pdf`;
       pdf.save(fileName);
       toast({ title: "PDF gerado!", description: fileName });
     } catch (error) {
-      toast({ title: "Erro ao gerar PDF", description: "Tente a opção Imprimir", variant: "destructive" });
+      console.error(error);
+      toast({ title: "Erro ao gerar PDF", description: "Tente novamente", variant: "destructive" });
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -308,29 +344,25 @@ export default function InspectionViewPage() {
 
       {/* Action Buttons */}
       <div className="max-w-[800px] mx-auto px-4 py-4 print:hidden">
-        <div className="grid grid-cols-4 gap-2">
-          <Button onClick={handleDownloadPDF} disabled={isGeneratingPDF} className="bg-blue-600 text-white hover:bg-blue-700" data-testid="button-download">
-            {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            <span className="ml-1 hidden sm:inline">{isGeneratingPDF ? "..." : "PDF"}</span>
+        <div className="grid grid-cols-3 gap-2">
+          <Button onClick={handleDownloadPDF} disabled={isGeneratingPDF} className="bg-blue-600 text-white hover:bg-blue-700 font-bold" data-testid="button-download">
+            {isGeneratingPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            {isGeneratingPDF ? "Gerando..." : "Baixar PDF"}
           </Button>
-          <Button onClick={handleExportExcel} className="bg-green-700 text-white hover:bg-green-800" data-testid="button-excel">
-            <FileSpreadsheet className="w-4 h-4" />
-            <span className="ml-1 hidden sm:inline">Excel</span>
+          <Button onClick={handleExportExcel} className="bg-green-700 text-white hover:bg-green-800 font-bold" data-testid="button-excel">
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Excel
           </Button>
-          <Button onClick={handleShare} className="bg-gray-600 text-white hover:bg-gray-700" data-testid="button-share">
-            <Share2 className="w-4 h-4" />
-            <span className="ml-1 hidden sm:inline">Compartilhar</span>
-          </Button>
-          <Button onClick={() => window.print()} variant="outline" className="border-gray-400" data-testid="button-print">
-            <Printer className="w-4 h-4" />
-            <span className="ml-1 hidden sm:inline">Imprimir</span>
+          <Button onClick={handleShare} variant="outline" className="border-gray-300 font-bold" data-testid="button-share">
+            <Share2 className="w-4 h-4 mr-2" />
+            Compartilhar
           </Button>
         </div>
       </div>
 
       {/* PDF Content — A4 */}
       <div className="flex justify-center px-2 print:px-0">
-        <div ref={pdfRef} className="bg-white shadow-lg print:shadow-none" style={{ width: "794px", minHeight: "1123px", fontFamily: "Arial, Helvetica, sans-serif" }}>
+        <div ref={pdfRef} className="bg-white shadow-lg print:shadow-none" style={{ width: "794px", fontFamily: "Arial, Helvetica, sans-serif" }}>
 
           {/* Cabeçalho */}
           <div style={{ backgroundColor: "#1a1d23", padding: "24px 32px" }}>
@@ -413,38 +445,67 @@ export default function InspectionViewPage() {
                 <span style={{ fontSize: "14px", fontWeight: "bold", color: "#dc2626" }}>NÃO CONFORMIDADES IDENTIFICADAS ({ncCount})</span>
               </div>
               {nonConformities.map(({ nrNumber, nrName, item, data }, idx) => (
-                <div key={item.id} style={{ marginBottom: "12px", padding: "16px", backgroundColor: "#fff", border: "1px solid #e5e7eb", borderLeft: "4px solid #dc2626", borderRadius: "4px" }}>
-                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                    <div style={{ width: "24px", height: "24px", backgroundColor: "#dc2626", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ color: "white", fontSize: "12px", fontWeight: "bold" }}>{idx + 1}</span>
+                <div key={item.id} style={{ marginBottom: "14px", backgroundColor: "#fff", border: "1px solid #e5e7eb", borderLeft: "4px solid #dc2626", borderRadius: "6px", overflow: "hidden" }}>
+                  {/* NC Header */}
+                  <div style={{ padding: "12px 16px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                    <div style={{ width: "22px", height: "22px", backgroundColor: "#dc2626", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>
+                      <span style={{ color: "white", fontSize: "11px", fontWeight: "bold" }}>{idx + 1}</span>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "13px", fontWeight: "600", color: "#111", marginBottom: "2px" }}>{item.text}</div>
-                      <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "8px" }}>{nrNumber} — {nrName}</div>
-                      {data.observation && (
-                        <div style={{ fontSize: "12px", color: "#374151", fontStyle: "italic", padding: "8px 12px", backgroundColor: "#f9fafb", borderRadius: "4px", marginBottom: "8px" }}>"{data.observation}"</div>
-                      )}
-                      {data.actionPlan && (data.actionPlan.responsible || data.actionPlan.deadline) && (
-                        <div style={{ padding: "12px", backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "4px" }}>
-                          <div style={{ fontSize: "10px", fontWeight: "bold", color: "#92400e", marginBottom: "8px" }}>PLANO DE AÇÃO</div>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-                            <div>
-                              <div style={{ fontSize: "10px", color: "#6b7280" }}>Responsável</div>
-                              <div style={{ fontSize: "12px", fontWeight: "500" }}>{data.actionPlan.responsible || "-"}</div>
-                            </div>
-                            <div>
-                              <div style={{ fontSize: "10px", color: "#6b7280" }}>Prazo</div>
-                              <div style={{ fontSize: "12px", fontWeight: "500" }}>{data.actionPlan.deadline ? formatDateShort(data.actionPlan.deadline) : "-"}</div>
-                            </div>
-                            <div>
-                              <div style={{ fontSize: "10px", color: "#6b7280" }}>Prioridade</div>
-                              <div style={{ fontSize: "12px", fontWeight: "bold", color: getPriorityLabel(data.actionPlan.priority).color }}>{getPriorityLabel(data.actionPlan.priority).text}</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "#111", lineHeight: "1.4", marginBottom: "3px" }}>{item.text}</div>
+                      <div style={{ fontSize: "11px", color: "#6b7280" }}>{nrNumber} — {nrName}</div>
                     </div>
                   </div>
+
+                  {/* Observação */}
+                  {data.observation && (
+                    <div style={{ margin: "0 16px 10px", fontSize: "12px", color: "#374151", fontStyle: "italic", padding: "8px 12px", backgroundColor: "#f9fafb", borderRadius: "4px", borderLeft: "3px solid #d1d5db" }}>
+                      <span style={{ fontWeight: "600", fontStyle: "normal", color: "#6b7280", fontSize: "10px", display: "block", marginBottom: "2px" }}>OBSERVAÇÃO</span>
+                      {data.observation}
+                    </div>
+                  )}
+
+                  {/* Fotos */}
+                  {data.photos && data.photos.length > 0 && (
+                    <div style={{ margin: "0 16px 10px" }}>
+                      <div style={{ fontSize: "10px", fontWeight: "bold", color: "#374151", marginBottom: "6px", textTransform: "uppercase" }}>
+                        Evidências Fotográficas ({data.photos.length})
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(data.photos.length, 3)}, 1fr)`, gap: "6px" }}>
+                        {data.photos.map((photoUrl, photoIdx) => (
+                          <div key={photoIdx} style={{ borderRadius: "4px", overflow: "hidden", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6", aspectRatio: "4/3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <img
+                              src={photoUrl}
+                              alt={`Foto ${photoIdx + 1}`}
+                              crossOrigin="anonymous"
+                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Plano de Ação */}
+                  {data.actionPlan && (data.actionPlan.responsible || data.actionPlan.deadline || data.actionPlan.priority) && (
+                    <div style={{ margin: "0 16px 12px", padding: "10px 14px", backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "4px" }}>
+                      <div style={{ fontSize: "10px", fontWeight: "bold", color: "#92400e", marginBottom: "8px", textTransform: "uppercase" }}>Plano de Ação</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                        <div>
+                          <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "2px" }}>Responsável</div>
+                          <div style={{ fontSize: "12px", fontWeight: "600", color: "#111" }}>{data.actionPlan.responsible || "—"}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "2px" }}>Prazo</div>
+                          <div style={{ fontSize: "12px", fontWeight: "600", color: "#111" }}>{data.actionPlan.deadline ? formatDateShort(data.actionPlan.deadline) : "—"}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "2px" }}>Prioridade</div>
+                          <div style={{ fontSize: "12px", fontWeight: "bold", color: getPriorityLabel(data.actionPlan.priority).color }}>{getPriorityLabel(data.actionPlan.priority).text}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -487,14 +548,20 @@ export default function InspectionViewPage() {
           </div>
 
           {/* Rodapé */}
-          <div style={{ padding: "32px", borderTop: "2px solid #e5e5e5" }}>
-            <div style={{ textAlign: "center", marginBottom: "24px" }}>
-              <div style={{ width: "200px", borderBottom: "1px solid #374151", margin: "0 auto 8px" }} />
-              <div style={{ fontSize: "14px", fontWeight: "600", color: "#111" }}>{inspData?.inspectorName || "Responsável"}</div>
-              <div style={{ fontSize: "11px", color: "#6b7280" }}>Técnico de Segurança do Trabalho</div>
-            </div>
-            <div style={{ textAlign: "center", fontSize: "10px", color: "#9ca3af" }}>
-              Relatório gerado em {formatDate(new Date().toISOString())} · <strong>SST Check Pro</strong>
+          <div style={{ padding: "24px 32px 28px", borderTop: "2px solid #e5e5e5", backgroundColor: "#f9fafb" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <div>
+                <div style={{ width: "180px", borderBottom: "1px solid #374151", marginBottom: "6px" }} />
+                <div style={{ fontSize: "13px", fontWeight: "600", color: "#111" }}>{inspData?.inspectorName || "Responsável"}</div>
+                <div style={{ fontSize: "11px", color: "#6b7280" }}>Técnico / Engenheiro de Segurança do Trabalho</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "10px", color: "#9ca3af", marginBottom: "2px" }}>
+                  Gerado em {formatDate(new Date().toISOString())}
+                </div>
+                <div style={{ fontSize: "11px", fontWeight: "bold", color: "#1a1d23" }}>SST Check Pro</div>
+                <div style={{ fontSize: "10px", color: "#9ca3af" }}>sstcheckpro.com.br</div>
+              </div>
             </div>
           </div>
         </div>
@@ -509,14 +576,6 @@ export default function InspectionViewPage() {
           </Button>
         </Link>
       </div>
-
-      <style>{`
-        @media print {
-          body { background: white !important; }
-          .print\\:hidden { display: none !important; }
-          @page { margin: 0; size: A4; }
-        }
-      `}</style>
     </div>
   );
 }
