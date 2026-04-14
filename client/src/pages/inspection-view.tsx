@@ -185,16 +185,16 @@ export default function InspectionViewPage() {
       const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      
+
       let heightLeft = imgHeight;
       let position = 0;
       let pageNum = 0;
-      
+
       while (heightLeft > 0) {
         if (pageNum > 0) {
           pdf.addPage();
         }
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
         position -= pdfHeight;
         pageNum++;

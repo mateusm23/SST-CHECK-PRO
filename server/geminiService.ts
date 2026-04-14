@@ -1,20 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 
 function getAIClient() {
-  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-  const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-  
-  if (!apiKey || !baseUrl) {
-    throw new Error("AI Integrations not configured. Please set up Gemini integration.");
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Gemini não configurado. Adicione GEMINI_API_KEY nas variáveis de ambiente.");
   }
-  
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      apiVersion: "",
-      baseUrl,
-    },
-  });
+
+  return new GoogleGenAI({ apiKey });
 }
 
 export interface ActionPlanSuggestion {

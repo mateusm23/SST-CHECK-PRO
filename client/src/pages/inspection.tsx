@@ -242,6 +242,46 @@ export default function InspectionPage() {
     }));
   };
 
+  const handleMarkSectionAll = (sectionIndex: number, value: ResponseType) => {
+    let startIndex = 0;
+    for (let i = 0; i < sectionIndex; i++) {
+      startIndex += SAMPLE_SECTIONS[i].items.length;
+    }
+    const section = SAMPLE_SECTIONS[sectionIndex];
+    setResponses((prev) => {
+      const next = { ...prev };
+      for (let i = 0; i < section.items.length; i++) {
+        const idx = startIndex + i;
+        if (!prev[idx]?.response) {
+          next[idx] = {
+            response: value,
+            observation: prev[idx]?.observation || "",
+            photos: prev[idx]?.photos || [],
+            actionPlan: value === "nc" ? prev[idx]?.actionPlan || { responsible: "", deadline: "", priority: "" } : undefined,
+          };
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleMarkAllUnset = (value: ResponseType) => {
+    setResponses((prev) => {
+      const next = { ...prev };
+      allItems.forEach(({ globalIndex }) => {
+        if (!prev[globalIndex]?.response) {
+          next[globalIndex] = {
+            response: value,
+            observation: prev[globalIndex]?.observation || "",
+            photos: prev[globalIndex]?.photos || [],
+            actionPlan: value === "nc" ? { responsible: "", deadline: "", priority: "" } : undefined,
+          };
+        }
+      });
+      return next;
+    });
+  };
+
   const handleActionPlan = (index: number, field: string, value: string) => {
     setResponses((prev) => ({
       ...prev,
@@ -422,6 +462,35 @@ export default function InspectionPage() {
           </div>
         </div>
 
+        {/* Bulk Action Banner */}
+        {stats.answered < totalItems && (
+          <div className="bg-[#1a1d23] rounded-xl px-4 py-3 mb-4 shadow-sm">
+            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">
+              Marcar todos não respondidos como:
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleMarkAllUnset("ok")}
+                className="flex-1 py-2 rounded-lg bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-all"
+              >
+                ✓ Conf.
+              </button>
+              <button
+                onClick={() => handleMarkAllUnset("nc")}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all"
+              >
+                ✗ NC
+              </button>
+              <button
+                onClick={() => handleMarkAllUnset("na")}
+                className="flex-1 py-2 rounded-lg bg-gray-500 text-white font-bold text-sm hover:bg-gray-600 transition-all"
+              >
+                N/A
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Checklist Items */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
           {SAMPLE_SECTIONS.map((section, sectionIndex) => {
@@ -430,12 +499,43 @@ export default function InspectionPage() {
               startIndex += SAMPLE_SECTIONS[i].items.length;
             }
 
+            const sectionUnset = section.items.filter(
+              (_, i) => !responses[startIndex + i]?.response
+            ).length;
+
             return (
               <div key={section.name} className="mb-4 last:mb-0">
                 {/* Section Header */}
-                <div className="bg-[#1a1d23] text-white px-4 py-3 font-semibold text-sm flex items-center gap-2">
-                  <span className="w-1 h-4 bg-[#FFD100] rounded-full" />
-                  {section.name}
+                <div className="bg-[#1a1d23] text-white px-4 py-2 font-semibold text-sm flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-1 h-4 bg-[#FFD100] rounded-full flex-shrink-0" />
+                    <span className="truncate">{section.name}</span>
+                  </div>
+                  {sectionUnset > 0 && (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleMarkSectionAll(sectionIndex, "ok")}
+                        className="px-2 py-1 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-all"
+                        title="Marcar não respondidos como Conforme"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={() => handleMarkSectionAll(sectionIndex, "nc")}
+                        className="px-2 py-1 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all"
+                        title="Marcar não respondidos como NC"
+                      >
+                        ✗
+                      </button>
+                      <button
+                        onClick={() => handleMarkSectionAll(sectionIndex, "na")}
+                        className="px-2 py-1 rounded bg-gray-500 text-white text-xs font-bold hover:bg-gray-600 transition-all"
+                        title="Marcar não respondidos como N/A"
+                      >
+                        N/A
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Items */}

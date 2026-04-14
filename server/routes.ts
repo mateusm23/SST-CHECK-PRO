@@ -9,10 +9,11 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { subscriptionPlans } from "@shared/schema";
 import { db } from "./db";
 
-// VIP emails with full unlimited access
-const VIP_EMAILS = [
-  "mateusnunesmonteiro@gmail.com",
-];
+// VIP emails with full unlimited access (configure via VIP_EMAILS env var, comma-separated)
+const VIP_EMAILS = (process.env.VIP_EMAILS || "")
+  .split(",")
+  .map((e: string) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 export async function registerRoutes(
   httpServer: Server,
@@ -25,7 +26,7 @@ export async function registerRoutes(
       const userEmail = (req.user.email || req.user.claims?.email || "").toLowerCase().trim();
       
       // Check if user is VIP (full unlimited access)
-      const isVIP = VIP_EMAILS.some(vip => vip.toLowerCase() === userEmail);
+      const isVIP = VIP_EMAILS.some((vip: string) => vip === userEmail);
       console.log("VIP check:", { userEmail, isVIP, vipList: VIP_EMAILS });
       
       if (isVIP) {
@@ -219,7 +220,7 @@ export async function registerRoutes(
       const userEmail = (req.user.email || req.user.claims?.email || "").toLowerCase().trim();
       
       // VIP users bypass all limits
-      const isVIP = VIP_EMAILS.some(vip => vip.toLowerCase() === userEmail);
+      const isVIP = VIP_EMAILS.some((vip: string) => vip === userEmail);
       
       if (!isVIP) {
         let userSub = await storage.getUserSubscription(userId);
@@ -260,14 +261,18 @@ export async function registerRoutes(
 
   app.get(api.inspections.get.path, isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const inspection = await storage.getInspection(Number(req.params.id));
       if (!inspection) {
         return res.status(404).json({ message: "Inspection not found" });
       }
-      
+      if (inspection.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
       const photos = await storage.getInspectionPhotos(inspection.id);
       const actionPlansList = await storage.getActionPlans(inspection.id);
-      
+
       res.json({ ...inspection, photos, actionPlans: actionPlansList });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch inspection" });
@@ -276,11 +281,16 @@ export async function registerRoutes(
 
   app.put(api.inspections.update.path, isAuthenticated, async (req: any, res) => {
     try {
-      const input = api.inspections.update.input.parse(req.body);
-      const inspection = await storage.updateInspection(Number(req.params.id), input);
-      if (!inspection) {
+      const userId = req.user.claims.sub;
+      const existing = await storage.getInspection(Number(req.params.id));
+      if (!existing) {
         return res.status(404).json({ message: "Inspection not found" });
       }
+      if (existing.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const input = api.inspections.update.input.parse(req.body);
+      const inspection = await storage.updateInspection(Number(req.params.id), input);
       res.json(inspection);
     } catch (error) {
       res.status(500).json({ message: "Failed to update inspection" });
@@ -289,6 +299,14 @@ export async function registerRoutes(
 
   app.delete(api.inspections.delete.path, isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const existing = await storage.getInspection(Number(req.params.id));
+      if (!existing) {
+        return res.status(404).json({ message: "Inspection not found" });
+      }
+      if (existing.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
       await storage.deleteInspection(Number(req.params.id));
       res.status(204).send();
     } catch (error) {
@@ -298,12 +316,17 @@ export async function registerRoutes(
 
   app.post(api.inspections.complete.path, isAuthenticated, async (req: any, res) => {
     try {
-      const inspection = await storage.updateInspection(Number(req.params.id), { 
-        status: "completed" 
-      });
-      if (!inspection) {
+      const userId = req.user.claims.sub;
+      const existing = await storage.getInspection(Number(req.params.id));
+      if (!existing) {
         return res.status(404).json({ message: "Inspection not found" });
       }
+      if (existing.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const inspection = await storage.updateInspection(Number(req.params.id), {
+        status: "completed"
+      });
       res.json(inspection);
     } catch (error) {
       res.status(500).json({ message: "Failed to complete inspection" });

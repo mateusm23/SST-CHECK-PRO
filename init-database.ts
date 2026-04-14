@@ -20,18 +20,18 @@ async function initializeDatabase() {
       },
       {
         name: "Profissional",
-        slug: "profissional",
-        monthlyLimit: 10,
-        canUploadLogo: false,
-        stripePriceId: "profissional_payment_link",
+        slug: "professional",
+        monthlyLimit: 30,
+        canUploadLogo: true,
+        stripePriceId: null, // configure via STRIPE_PROFESSIONAL_PRICE_ID no Railway
         price: 900,
       },
       {
         name: "Negócios",
-        slug: "negocios",
-        monthlyLimit: 30,
-        canUploadLogo: false,
-        stripePriceId: "negocios_payment_link",
+        slug: "business",
+        monthlyLimit: -1,
+        canUploadLogo: true,
+        stripePriceId: null, // configure via STRIPE_BUSINESS_PRICE_ID no Railway
         price: 2990,
       },
     ];
