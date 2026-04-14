@@ -5,7 +5,6 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export * from "./models/auth";
-export * from "./models/chat";
 
 export const subscriptionPlans = pgTable("subscription_plans", {
   id: serial("id").primaryKey(),
