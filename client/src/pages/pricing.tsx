@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Check, ArrowLeft, Smartphone, Crown } from "lucide-react";
+import { Check, ArrowLeft, Crown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -278,28 +278,6 @@ export default function PricingPage() {
           <p className="text-xs text-gray-400">
             🔒 Pagamento seguro via Stripe · Cancele a qualquer momento · Sem taxas ocultas
           </p>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-4 text-center">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="font-bold text-lg text-gray-900 mb-1">Ficou com dúvida?</h2>
-            <p className="text-gray-500 mb-4 text-sm">
-              Fale direto com a gente pelo WhatsApp
-            </p>
-            <a
-              href="https://wa.me/5511999999999?text=Olá%2C%20tenho%20uma%20dúvida%20sobre%20o%20SST%20Check%20Pro"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button
-                className="bg-green-500 hover:bg-green-600 text-white font-bold"
-              >
-                <Smartphone className="w-4 h-4 mr-2" />
-                Chamar no WhatsApp
-              </Button>
-            </a>
-          </div>
         </div>
       </main>
     </div>

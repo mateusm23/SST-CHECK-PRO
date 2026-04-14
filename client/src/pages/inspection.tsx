@@ -5,16 +5,19 @@ import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Check, 
-  ArrowLeft, 
-  Save, 
-  CheckCircle2, 
+import {
+  Check,
+  ArrowLeft,
+  Save,
+  CheckCircle2,
   Camera,
   X,
   Loader2,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardList,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -32,11 +35,6 @@ interface ItemResponse {
   };
 }
 
-interface ChecklistSection {
-  name: string;
-  items: string[];
-}
-
 interface NRChecklist {
   id: number;
   nrNumber: string;
@@ -45,64 +43,10 @@ interface NRChecklist {
   items: { id: string; text: string; required?: boolean }[];
 }
 
-const SAMPLE_SECTIONS: ChecklistSection[] = [
-  {
-    name: "EPIs - Equipamentos de Proteção Individual",
-    items: [
-      "Todos os trabalhadores estão utilizando capacete de segurança?",
-      "Os trabalhadores estão utilizando calçados de segurança (botinas)?",
-      "Óculos de proteção estão sendo utilizados nas atividades que exigem?",
-      "Protetores auriculares estão disponíveis e em uso em áreas ruidosas?",
-      "Luvas de proteção adequadas estão sendo utilizadas?",
-      "Os EPIs estão em bom estado de conservação?",
-      "Existe controle de entrega de EPIs com fichas assinadas?",
-    ],
-  },
-  {
-    name: "Proteção Contra Quedas",
-    items: [
-      "Guarda-corpos estão instalados em todas as periferias e aberturas?",
-      "Os guarda-corpos possuem altura mínima de 1,20m?",
-      "Aberturas no piso estão protegidas com tampas ou guarda-corpo?",
-      "Redes de proteção estão instaladas e em bom estado?",
-      "Trabalhadores em altura utilizam cinto tipo paraquedista?",
-      "Existem pontos de ancoragem adequados?",
-      "Linha de vida instalada onde necessário?",
-    ],
-  },
-  {
-    name: "Escadas, Rampas e Acessos",
-    items: [
-      "Escadas de mão estão em bom estado com sapatas antiderrapantes?",
-      "Escadas fixas possuem corrimão em ambos os lados?",
-      "Rampas possuem piso antiderrapante?",
-      "Passarelas têm largura mínima e guarda-corpo?",
-      "Acessos estão desobstruídos e sinalizados?",
-    ],
-  },
-  {
-    name: "Instalações Elétricas",
-    items: [
-      "Quadros elétricos estão fechados, identificados e aterrados?",
-      "Disjuntores DR estão instalados e funcionando?",
-      "Fios e cabos estão organizados, sem emendas expostas?",
-      "Máquinas e equipamentos elétricos estão aterrados?",
-      "Não há gambiarras ou ligações improvisadas?",
-    ],
-  },
-  {
-    name: "Ordem, Limpeza e Sinalização",
-    items: [
-      "O canteiro está limpo e organizado?",
-      "Materiais estão armazenados de forma segura?",
-      "Vias de circulação estão desobstruídas?",
-      "Sinalização de segurança está adequada e visível?",
-      "Áreas de risco estão isoladas e sinalizadas?",
-      "Entulho está sendo removido regularmente?",
-      "Extintores estão sinalizados, acessíveis e dentro da validade?",
-    ],
-  },
-];
+interface ChecklistData {
+  selectedNRIds: number[];
+  responses: Record<string, ItemResponse>;
+}
 
 export default function InspectionPage() {
   const [, params] = useRoute("/inspection/:id");
@@ -117,56 +61,70 @@ export default function InspectionPage() {
     observations: "",
   });
 
-  const [responses, setResponses] = useState<Record<number, ItemResponse>>({});
+  const [selectedNRIds, setSelectedNRIds] = useState<number[]>([]);
+  const [responses, setResponses] = useState<Record<string, ItemResponse>>({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Record<number, boolean>>({});
+  const [step, setStep] = useState<"select-nr" | "checklist">("select-nr");
 
   const { data: inspection, isLoading } = useQuery({
     queryKey: ["/api/inspections", inspectionId],
     enabled: !!inspectionId,
   });
 
-  const { data: nrChecklists } = useQuery<NRChecklist[]>({
+  const { data: nrChecklists = [] } = useQuery<NRChecklist[]>({
     queryKey: ["/api/nr-checklists"],
   });
 
+  const selectedNRs = useMemo(
+    () => nrChecklists.filter((nr) => selectedNRIds.includes(nr.id)),
+    [nrChecklists, selectedNRIds]
+  );
+
   const allItems = useMemo(() => {
-    const items: { sectionName: string; text: string; globalIndex: number }[] = [];
-    let globalIndex = 0;
-    SAMPLE_SECTIONS.forEach((section) => {
-      section.items.forEach((item) => {
-        items.push({ sectionName: section.name, text: item, globalIndex });
-        globalIndex++;
+    const items: { nrId: number; nrNumber: string; itemId: string; text: string; required: boolean }[] = [];
+    selectedNRs.forEach((nr) => {
+      nr.items.forEach((item) => {
+        items.push({ nrId: nr.id, nrNumber: nr.nrNumber, itemId: item.id, text: item.text, required: item.required ?? false });
       });
     });
     return items;
-  }, []);
+  }, [selectedNRs]);
 
   const totalItems = allItems.length;
 
   const stats = useMemo(() => {
     let ok = 0, nc = 0, na = 0;
-    Object.values(responses).forEach((r) => {
-      if (r.response === "ok") ok++;
-      else if (r.response === "nc") nc++;
-      else if (r.response === "na") na++;
+    allItems.forEach(({ itemId }) => {
+      const r = responses[itemId]?.response;
+      if (r === "ok") ok++;
+      else if (r === "nc") nc++;
+      else if (r === "na") na++;
     });
     return { ok, nc, na, answered: ok + nc + na };
-  }, [responses]);
+  }, [responses, allItems]);
 
   const progressPercent = totalItems > 0 ? (stats.answered / totalItems) * 100 : 0;
-  const canFinish = stats.answered === totalItems;
+  const canFinish = totalItems > 0 && stats.answered === totalItems;
 
   useEffect(() => {
     if (inspection) {
+      const insp = inspection as any;
       setFormData({
-        title: (inspection as any).title || "",
-        location: (inspection as any).location || "",
-        inspectorName: (inspection as any).inspectorName || "",
-        observations: (inspection as any).observations || "",
+        title: insp.title || "",
+        location: insp.location || "",
+        inspectorName: insp.inspectorName || "",
+        observations: insp.observations || "",
       });
-      if ((inspection as any).checklistData) {
-        const saved = (inspection as any).checklistData as Record<number, ItemResponse>;
-        setResponses(saved);
+      if (insp.checklistData) {
+        const saved = insp.checklistData as ChecklistData;
+        if (saved.selectedNRIds && Array.isArray(saved.selectedNRIds)) {
+          setSelectedNRIds(saved.selectedNRIds);
+          setResponses(saved.responses || {});
+          if (saved.selectedNRIds.length > 0) setStep("checklist");
+        } else {
+          // legacy format (old numeric keys) — ignore, start fresh
+        }
       }
     }
   }, [inspection]);
@@ -194,7 +152,7 @@ export default function InspectionPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/inspections", inspectionId] });
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       toast({ title: "Concluída", description: "Inspeção finalizada com sucesso" });
-      setLocation("/dashboard");
+      setLocation(`/inspection/${inspectionId}/view`);
     },
   });
 
@@ -210,70 +168,93 @@ export default function InspectionPage() {
     },
   });
 
+  const buildChecklistData = (): ChecklistData => ({
+    selectedNRIds,
+    responses,
+  });
+
   const handleSave = () => {
-    updateMutation.mutate({
-      ...formData,
-      checklistData: responses,
-    });
+    updateMutation.mutate({ ...formData, checklistData: buildChecklistData() });
   };
 
-  const handleResponse = (index: number, value: ResponseType) => {
-    setResponses((prev) => ({
-      ...prev,
-      [index]: {
-        ...prev[index],
-        response: value,
-        observation: prev[index]?.observation || "",
-        photos: prev[index]?.photos || [],
-        actionPlan: value === "nc" ? prev[index]?.actionPlan || { responsible: "", deadline: "", priority: "" } : undefined,
-      },
-    }));
-  };
-
-  const handleObservation = (index: number, value: string) => {
-    setResponses((prev) => ({
-      ...prev,
-      [index]: {
-        ...prev[index],
-        response: prev[index]?.response || null,
-        observation: value,
-        photos: prev[index]?.photos || [],
-      },
-    }));
-  };
-
-  const handleMarkSectionAll = (sectionIndex: number, value: ResponseType) => {
-    let startIndex = 0;
-    for (let i = 0; i < sectionIndex; i++) {
-      startIndex += SAMPLE_SECTIONS[i].items.length;
+  const handleConfirmNRs = () => {
+    if (selectedNRIds.length === 0) {
+      toast({ title: "Selecione ao menos uma NR", variant: "destructive" });
+      return;
     }
-    const section = SAMPLE_SECTIONS[sectionIndex];
-    setResponses((prev) => {
-      const next = { ...prev };
-      for (let i = 0; i < section.items.length; i++) {
-        const idx = startIndex + i;
-        if (!prev[idx]?.response) {
-          next[idx] = {
-            response: value,
-            observation: prev[idx]?.observation || "",
-            photos: prev[idx]?.photos || [],
-            actionPlan: value === "nc" ? prev[idx]?.actionPlan || { responsible: "", deadline: "", priority: "" } : undefined,
-          };
-        }
-      }
-      return next;
+    updateMutation.mutate({ ...formData, checklistData: buildChecklistData() });
+    setStep("checklist");
+  };
+
+  const handleResponse = (itemId: string, value: ResponseType) => {
+    setResponses((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        response: value,
+        observation: prev[itemId]?.observation || "",
+        photos: prev[itemId]?.photos || [],
+        actionPlan:
+          value === "nc"
+            ? prev[itemId]?.actionPlan || { responsible: "", deadline: "", priority: "" }
+            : undefined,
+      },
+    }));
+  };
+
+  const handleObservation = (itemId: string, value: string) => {
+    setResponses((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], response: prev[itemId]?.response || null, observation: value, photos: prev[itemId]?.photos || [] },
+    }));
+  };
+
+  const handleActionPlan = (itemId: string, field: string, value: string) => {
+    setResponses((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        response: prev[itemId]?.response || null,
+        observation: prev[itemId]?.observation || "",
+        photos: prev[itemId]?.photos || [],
+        actionPlan: { ...prev[itemId]?.actionPlan, [field]: value } as any,
+      },
+    }));
+  };
+
+  const handlePhotoUpload = (itemId: string, files: FileList | null) => {
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        setResponses((prev) => ({
+          ...prev,
+          [itemId]: { ...prev[itemId], response: prev[itemId]?.response || null, observation: prev[itemId]?.observation || "", photos: [...(prev[itemId]?.photos || []), base64] },
+        }));
+      };
+      reader.readAsDataURL(file);
     });
   };
 
-  const handleMarkAllUnset = (value: ResponseType) => {
+  const handleRemovePhoto = (itemId: string, photoIndex: number) => {
+    setResponses((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], photos: prev[itemId]?.photos.filter((_, i) => i !== photoIndex) || [] },
+    }));
+  };
+
+  const handleMarkNRAll = (nrId: number, value: ResponseType) => {
+    const nr = nrChecklists.find((n) => n.id === nrId);
+    if (!nr) return;
     setResponses((prev) => {
       const next = { ...prev };
-      allItems.forEach(({ globalIndex }) => {
-        if (!prev[globalIndex]?.response) {
-          next[globalIndex] = {
+      nr.items.forEach((item) => {
+        if (!prev[item.id]?.response) {
+          next[item.id] = {
             response: value,
-            observation: prev[globalIndex]?.observation || "",
-            photos: prev[globalIndex]?.photos || [],
+            observation: prev[item.id]?.observation || "",
+            photos: prev[item.id]?.photos || [],
             actionPlan: value === "nc" ? { responsible: "", deadline: "", priority: "" } : undefined,
           };
         }
@@ -282,51 +263,31 @@ export default function InspectionPage() {
     });
   };
 
-  const handleActionPlan = (index: number, field: string, value: string) => {
-    setResponses((prev) => ({
-      ...prev,
-      [index]: {
-        ...prev[index],
-        response: prev[index]?.response || null,
-        observation: prev[index]?.observation || "",
-        photos: prev[index]?.photos || [],
-        actionPlan: {
-          ...prev[index]?.actionPlan,
-          [field]: value,
-        } as any,
-      },
-    }));
-  };
-
-  const handlePhotoUpload = (index: number, files: FileList | null) => {
-    if (!files) return;
-    
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setResponses((prev) => ({
-          ...prev,
-          [index]: {
-            ...prev[index],
-            response: prev[index]?.response || null,
-            observation: prev[index]?.observation || "",
-            photos: [...(prev[index]?.photos || []), base64],
-          },
-        }));
-      };
-      reader.readAsDataURL(file);
+  const handleMarkAllUnset = (value: ResponseType) => {
+    setResponses((prev) => {
+      const next = { ...prev };
+      allItems.forEach(({ itemId }) => {
+        if (!prev[itemId]?.response) {
+          next[itemId] = {
+            response: value,
+            observation: prev[itemId]?.observation || "",
+            photos: prev[itemId]?.photos || [],
+            actionPlan: value === "nc" ? { responsible: "", deadline: "", priority: "" } : undefined,
+          };
+        }
+      });
+      return next;
     });
   };
 
-  const handleRemovePhoto = (index: number, photoIndex: number) => {
-    setResponses((prev) => ({
-      ...prev,
-      [index]: {
-        ...prev[index],
-        photos: prev[index]?.photos.filter((_, i) => i !== photoIndex) || [],
-      },
-    }));
+  const toggleSection = (nrId: number) => {
+    setCollapsedSections((prev) => ({ ...prev, [nrId]: !prev[nrId] }));
+  };
+
+  const toggleNR = (id: number) => {
+    setSelectedNRIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
   if (isLoading) {
@@ -335,8 +296,9 @@ export default function InspectionPage() {
         <header className="bg-[#1a1d23] text-white p-4 text-center sticky top-0 z-50">
           <Skeleton className="h-6 w-48 mx-auto bg-[#4A4E57]" />
         </header>
-        <div className="max-w-[600px] mx-auto p-4">
+        <div className="max-w-[600px] mx-auto p-4 space-y-3">
           <Skeleton className="h-48 w-full bg-white rounded-xl" />
+          <Skeleton className="h-32 w-full bg-white rounded-xl" />
         </div>
       </div>
     );
@@ -344,7 +306,7 @@ export default function InspectionPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
@@ -352,17 +314,15 @@ export default function InspectionPage() {
               <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-7 h-7 text-red-500" />
               </div>
-              <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-gray-600" data-testid="button-close-modal">
+              <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">Deletar Inspeção?</h2>
-            <p className="text-gray-600 mb-6">Essa ação não pode ser desfeita. Todos os dados da inspeção serão permanentemente removidos.</p>
+            <p className="text-gray-600 mb-6">Essa ação não pode ser desfeita.</p>
             <div className="flex gap-3">
-              <Button variant="ghost" onClick={() => setShowDeleteModal(false)} className="flex-1" data-testid="button-cancel-modal">
-                Cancelar
-              </Button>
-              <Button onClick={() => deleteInspectionMutation.mutate()} disabled={deleteInspectionMutation.isPending} className="flex-1 bg-red-500 text-white hover:bg-red-600" data-testid="button-confirm-modal">
+              <Button variant="ghost" onClick={() => setShowDeleteModal(false)} className="flex-1">Cancelar</Button>
+              <Button onClick={() => deleteInspectionMutation.mutate()} disabled={deleteInspectionMutation.isPending} className="flex-1 bg-red-500 text-white hover:bg-red-600">
                 {deleteInspectionMutation.isPending ? "Deletando..." : "Deletar"}
               </Button>
             </div>
@@ -371,354 +331,338 @@ export default function InspectionPage() {
       )}
 
       {/* Header */}
-      <header className="bg-[#1a1d23] text-white p-4 text-center sticky top-0 z-50">
+      <header className="bg-[#1a1d23] text-white p-4 sticky top-0 z-50">
         <div className="flex items-center justify-between max-w-[600px] mx-auto">
           <Link href="/dashboard">
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" data-testid="button-back">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <div>
+          <div className="text-center">
             <h1 className="text-[#FFD100] font-bold text-lg flex items-center gap-2 justify-center">
               <Check className="w-5 h-5" />
               SST Check Pro
             </h1>
-            <p className="text-xs opacity-80">Checklist de Segurança do Trabalho</p>
+            <p className="text-xs opacity-70">
+              {step === "select-nr" ? "Selecionar NRs" : "Checklist"}
+            </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setShowDeleteModal(true)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20" data-testid="button-delete">
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setShowDeleteModal(true)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20">
               <Trash2 className="h-5 w-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className="text-white hover:bg-white/10"
-              data-testid="button-save"
-            >
-              {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-            </Button>
+            {step === "checklist" && (
+              <Button variant="ghost" size="icon" onClick={handleSave} disabled={updateMutation.isPending} className="text-white hover:bg-white/10">
+                {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       <div className="max-w-[600px] mx-auto p-4">
-        {/* Info Card */}
-        <div className="bg-white rounded-xl p-6 mb-4 shadow-sm">
-          <h2 className="font-bold text-lg mb-4 text-[#1a1d23]">NR 18 - Inspeção de Canteiro de Obras</h2>
-          
-          <div className="space-y-3 mb-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Nome da Obra / Local *</label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Ex: Edifício Residencial Aurora"
-                className="border-2 border-gray-200 focus:border-[#FFD100]"
-                data-testid="input-title"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Responsável pela Inspeção *</label>
-              <Input
-                value={formData.inspectorName}
-                onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })}
-                placeholder="Seu nome completo"
-                className="border-2 border-gray-200 focus:border-[#FFD100]"
-                data-testid="input-inspector"
-              />
-            </div>
-          </div>
 
-          {/* Progress Bar */}
-          <div className="bg-gray-200 h-2.5 rounded-full overflow-hidden mb-2">
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{
-                width: `${progressPercent}%`,
-                background: "linear-gradient(90deg, #FFD100, #f59e0b)",
-              }}
-            />
-          </div>
-          <p className="text-center text-sm text-gray-600 mb-4">
-            <span className="font-semibold">{stats.answered}</span> de <span className="font-semibold">{totalItems}</span> itens respondidos
-          </p>
+        {/* ── STEP 1: Dados + Seleção de NRs ── */}
+        {step === "select-nr" && (
+          <>
+            {/* Dados da inspeção */}
+            <div className="bg-white rounded-xl p-5 mb-4 shadow-sm">
+              <h2 className="font-bold text-base mb-4 text-[#1a1d23] flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-[#FFD100]" />
+                Dados da Inspeção
+              </h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Nome da Obra / Local *</label>
+                  <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Edifício Aurora — Bloco A" className="border-2 border-gray-200 focus:border-[#FFD100]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Endereço / Localização</label>
+                  <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="Ex: Rua das Flores, 100 — São Paulo/SP" className="border-2 border-gray-200 focus:border-[#FFD100]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Responsável pela Inspeção *</label>
+                  <Input value={formData.inspectorName} onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })} placeholder="Nome completo do técnico ou engenheiro" className="border-2 border-gray-200 focus:border-[#FFD100]" />
+                </div>
+              </div>
+            </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-green-50 rounded-lg p-3 text-center">
-              <div className="text-3xl font-bold text-green-600" data-testid="stat-ok">{stats.ok}</div>
-              <div className="text-xs text-green-700 uppercase font-semibold">Conforme</div>
-            </div>
-            <div className="bg-red-50 rounded-lg p-3 text-center">
-              <div className="text-3xl font-bold text-red-600" data-testid="stat-nc">{stats.nc}</div>
-              <div className="text-xs text-red-700 uppercase font-semibold">Não Conf.</div>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-3 text-center">
-              <div className="text-3xl font-bold text-gray-600" data-testid="stat-na">{stats.na}</div>
-              <div className="text-xs text-gray-700 uppercase font-semibold">N/A</div>
-            </div>
-          </div>
-        </div>
+            {/* Seleção de NRs */}
+            <div className="bg-white rounded-xl p-5 mb-4 shadow-sm">
+              <h2 className="font-bold text-base mb-1 text-[#1a1d23]">Selecione as NRs a inspecionar</h2>
+              <p className="text-xs text-gray-400 mb-4">Escolha uma ou mais normas regulamentadoras</p>
 
-        {/* Bulk Action Banner */}
-        {stats.answered < totalItems && (
-          <div className="bg-[#1a1d23] rounded-xl px-4 py-3 mb-4 shadow-sm">
-            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">
-              Marcar todos não respondidos como:
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleMarkAllUnset("ok")}
-                className="flex-1 py-2 rounded-lg bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-all"
-              >
-                ✓ Conf.
-              </button>
-              <button
-                onClick={() => handleMarkAllUnset("nc")}
-                className="flex-1 py-2 rounded-lg bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all"
-              >
-                ✗ NC
-              </button>
-              <button
-                onClick={() => handleMarkAllUnset("na")}
-                className="flex-1 py-2 rounded-lg bg-gray-500 text-white font-bold text-sm hover:bg-gray-600 transition-all"
-              >
-                N/A
-              </button>
+              {nrChecklists.length === 0 ? (
+                <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+              ) : (
+                <div className="space-y-2">
+                  {nrChecklists.map((nr) => {
+                    const selected = selectedNRIds.includes(nr.id);
+                    return (
+                      <button
+                        key={nr.id}
+                        onClick={() => toggleNR(nr.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${
+                          selected
+                            ? "border-[#FFD100] bg-[#fffbe6]"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="font-bold text-sm text-[#1a1d23]">{nr.nrNumber}</div>
+                          <div className="text-xs text-gray-500 truncate">{nr.nrName}</div>
+                          <div className="text-xs text-gray-400 mt-0.5">{nr.items.length} itens · {nr.category}</div>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                          selected ? "bg-[#FFD100] border-[#FFD100]" : "border-gray-300"
+                        }`}>
+                          {selected && <Check className="w-3.5 h-3.5 text-[#1a1d23] stroke-[3]" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
+
+            <button
+              onClick={handleConfirmNRs}
+              disabled={selectedNRIds.length === 0 || updateMutation.isPending}
+              className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 ${
+                selectedNRIds.length > 0
+                  ? "bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00]"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {updateMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <ClipboardList className="w-5 h-5" />}
+              {selectedNRIds.length === 0
+                ? "Selecione ao menos 1 NR"
+                : `Iniciar Checklist (${selectedNRIds.length} NR${selectedNRIds.length > 1 ? "s" : ""})`}
+            </button>
+          </>
         )}
 
-        {/* Checklist Items */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-          {SAMPLE_SECTIONS.map((section, sectionIndex) => {
-            let startIndex = 0;
-            for (let i = 0; i < sectionIndex; i++) {
-              startIndex += SAMPLE_SECTIONS[i].items.length;
-            }
-
-            const sectionUnset = section.items.filter(
-              (_, i) => !responses[startIndex + i]?.response
-            ).length;
-
-            return (
-              <div key={section.name} className="mb-4 last:mb-0">
-                {/* Section Header */}
-                <div className="bg-[#1a1d23] text-white px-4 py-2 font-semibold text-sm flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-1 h-4 bg-[#FFD100] rounded-full flex-shrink-0" />
-                    <span className="truncate">{section.name}</span>
-                  </div>
-                  {sectionUnset > 0 && (
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => handleMarkSectionAll(sectionIndex, "ok")}
-                        className="px-2 py-1 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-all"
-                        title="Marcar não respondidos como Conforme"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={() => handleMarkSectionAll(sectionIndex, "nc")}
-                        className="px-2 py-1 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all"
-                        title="Marcar não respondidos como NC"
-                      >
-                        ✗
-                      </button>
-                      <button
-                        onClick={() => handleMarkSectionAll(sectionIndex, "na")}
-                        className="px-2 py-1 rounded bg-gray-500 text-white text-xs font-bold hover:bg-gray-600 transition-all"
-                        title="Marcar não respondidos como N/A"
-                      >
-                        N/A
-                      </button>
-                    </div>
-                  )}
+        {/* ── STEP 2: Checklist ── */}
+        {step === "checklist" && (
+          <>
+            {/* Resumo */}
+            <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="font-bold text-sm text-[#1a1d23]">{formData.title || "Sem título"}</div>
+                  <div className="text-xs text-gray-400">{formData.inspectorName} · {selectedNRs.map(n => n.nrNumber).join(", ")}</div>
                 </div>
+                <button onClick={() => setStep("select-nr")} className="text-xs text-blue-500 underline flex-shrink-0">Alterar NRs</button>
+              </div>
 
-                {/* Items */}
-                {section.items.map((item, itemIndex) => {
-                  const globalIndex = startIndex + itemIndex;
-                  const itemResponse = responses[globalIndex];
-                  const currentResponse = itemResponse?.response;
+              {/* Progress */}
+              <div className="bg-gray-200 h-2 rounded-full overflow-hidden mb-2">
+                <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progressPercent}%`, background: "linear-gradient(90deg, #FFD100, #f59e0b)" }} />
+              </div>
+              <p className="text-center text-xs text-gray-500 mb-3">
+                <span className="font-semibold">{stats.answered}</span> de <span className="font-semibold">{totalItems}</span> itens respondidos
+              </p>
 
-                  return (
-                    <div key={globalIndex} className="p-4 border-b border-gray-100 last:border-b-0">
-                      {/* Question */}
-                      <p className="font-medium text-gray-800 mb-3 leading-relaxed">
-                        {globalIndex + 1}. {item}
-                      </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-green-50 rounded-lg p-2 text-center">
+                  <div className="text-2xl font-bold text-green-600">{stats.ok}</div>
+                  <div className="text-xs text-green-700 font-semibold uppercase">Conforme</div>
+                </div>
+                <div className="bg-red-50 rounded-lg p-2 text-center">
+                  <div className="text-2xl font-bold text-red-600">{stats.nc}</div>
+                  <div className="text-xs text-red-700 font-semibold uppercase">Não Conf.</div>
+                </div>
+                <div className="bg-gray-100 rounded-lg p-2 text-center">
+                  <div className="text-2xl font-bold text-gray-600">{stats.na}</div>
+                  <div className="text-xs text-gray-700 font-semibold uppercase">N/A</div>
+                </div>
+              </div>
+            </div>
 
-                      {/* Response Buttons */}
-                      <div className="flex gap-2 mb-3">
-                        <button
-                          onClick={() => handleResponse(globalIndex, "ok")}
-                          className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
-                            currentResponse === "ok"
-                              ? "bg-green-500 text-white border-green-500"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-green-300"
-                          }`}
-                          data-testid={`btn-ok-${globalIndex}`}
-                        >
-                          ✓ Conf.
-                        </button>
-                        <button
-                          onClick={() => handleResponse(globalIndex, "nc")}
-                          className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
-                            currentResponse === "nc"
-                              ? "bg-red-500 text-white border-red-500"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-red-300"
-                          }`}
-                          data-testid={`btn-nc-${globalIndex}`}
-                        >
-                          ✗ NC
-                        </button>
-                        <button
-                          onClick={() => handleResponse(globalIndex, "na")}
-                          className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
-                            currentResponse === "na"
-                              ? "bg-gray-500 text-white border-gray-500"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
-                          }`}
-                          data-testid={`btn-na-${globalIndex}`}
-                        >
-                          N/A
-                        </button>
-                      </div>
+            {/* Marcação em massa global */}
+            {stats.answered < totalItems && (
+              <div className="bg-[#1a1d23] rounded-xl px-4 py-3 mb-4 shadow-sm">
+                <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">
+                  Marcar todos não respondidos como:
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleMarkAllUnset("ok")} className="flex-1 py-2 rounded-lg bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-all">✓ Conf.</button>
+                  <button onClick={() => handleMarkAllUnset("nc")} className="flex-1 py-2 rounded-lg bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all">✗ NC</button>
+                  <button onClick={() => handleMarkAllUnset("na")} className="flex-1 py-2 rounded-lg bg-gray-500 text-white font-bold text-sm hover:bg-gray-600 transition-all">N/A</button>
+                </div>
+              </div>
+            )}
 
-                      {/* Extras: Observation (always visible) */}
-                      <div className="pt-3 border-t border-dashed border-gray-200">
-                        <input
-                          type="text"
-                          placeholder="Observação (opcional)"
-                          value={itemResponse?.observation || ""}
-                          onChange={(e) => handleObservation(globalIndex, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-[#FFD100]"
-                          data-testid={`input-obs-${globalIndex}`}
-                        />
+            {/* Seções por NR */}
+            {selectedNRs.map((nr) => {
+              const nrItems = nr.items;
+              const nrUnset = nrItems.filter((item) => !responses[item.id]?.response).length;
+              const nrOk = nrItems.filter((item) => responses[item.id]?.response === "ok").length;
+              const nrNc = nrItems.filter((item) => responses[item.id]?.response === "nc").length;
+              const isCollapsed = collapsedSections[nr.id];
 
-                        {/* Photo Upload - Only visible for NC */}
-                        {currentResponse === "nc" && (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <label
-                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-all ${
-                                (itemResponse?.photos?.length || 0) > 0
-                                  ? "bg-blue-50 border-2 border-blue-500 text-blue-700"
-                                  : "bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 hover:border-gray-400"
-                              }`}
-                            >
-                              <Camera className="w-4 h-4" />
-                              {(itemResponse?.photos?.length || 0) > 0 ? `${itemResponse.photos.length} foto(s)` : "Adicionar Foto"}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                multiple
-                                className="hidden"
-                                onChange={(e) => handlePhotoUpload(globalIndex, e.target.files)}
-                                data-testid={`input-photo-${globalIndex}`}
-                              />
-                            </label>
-
-                            {/* Photo Previews */}
-                            {itemResponse?.photos?.map((photo, photoIndex) => (
-                              <div key={photoIndex} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                                <img src={photo} alt="" className="max-w-full max-h-full object-contain" />
-                                <button
-                                  onClick={() => handleRemovePhoto(globalIndex, photoIndex)}
-                                  className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                                  data-testid={`btn-remove-photo-${globalIndex}-${photoIndex}`}
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ))}
+              return (
+                <div key={nr.id} className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+                  {/* NR Header */}
+                  <div className="bg-[#1a1d23] text-white px-4 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <button onClick={() => toggleSection(nr.id)} className="flex items-center gap-2 flex-1 text-left min-w-0">
+                        <div className="min-w-0">
+                          <div className="font-bold text-sm flex items-center gap-2">
+                            <span className="w-1 h-4 bg-[#FFD100] rounded-full flex-shrink-0 block" />
+                            {nr.nrNumber} — {nr.nrName}
                           </div>
-                        )}
-                      </div>
+                          <div className="text-xs text-gray-400 mt-0.5 pl-3">
+                            {nrOk} conf. · {nrNc} NC · {nrUnset} pendentes
+                          </div>
+                        </div>
+                        {isCollapsed ? <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                      </button>
 
-                      {/* Action Plan (only for NC) */}
-                      {currentResponse === "nc" && (
-                        <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                          <div className="text-sm font-bold text-red-700 mb-2 flex items-center gap-1">
-                            <span>⚠️</span> Plano de Ação para Não Conformidade
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 mb-2">
-                            <div>
-                              <label className="text-xs text-gray-600 block mb-1">Responsável</label>
-                              <input
-                                type="text"
-                                placeholder="Quem vai corrigir?"
-                                value={itemResponse?.actionPlan?.responsible || ""}
-                                onChange={(e) => handleActionPlan(globalIndex, "responsible", e.target.value)}
-                                className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]"
-                                data-testid={`input-action-responsible-${globalIndex}`}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-600 block mb-1">Prazo</label>
-                              <input
-                                type="date"
-                                value={itemResponse?.actionPlan?.deadline || ""}
-                                onChange={(e) => handleActionPlan(globalIndex, "deadline", e.target.value)}
-                                className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]"
-                                data-testid={`input-action-deadline-${globalIndex}`}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-600 block mb-1">Prioridade</label>
-                            <select
-                              value={itemResponse?.actionPlan?.priority || ""}
-                              onChange={(e) => handleActionPlan(globalIndex, "priority", e.target.value)}
-                              className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]"
-                              data-testid={`select-action-priority-${globalIndex}`}
-                            >
-                              <option value="">Selecione...</option>
-                              <option value="alta">Alta - Risco Grave/Iminente</option>
-                              <option value="media">Média - Risco Moderado</option>
-                              <option value="baixa">Baixa - Risco Menor</option>
-                            </select>
-                          </div>
+                      {/* Marcação em massa por NR */}
+                      {nrUnset > 0 && (
+                        <div className="flex gap-1 flex-shrink-0">
+                          <button onClick={() => handleMarkNRAll(nr.id, "ok")} className="px-2 py-1 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600" title="Todos como Conforme">✓</button>
+                          <button onClick={() => handleMarkNRAll(nr.id, "nc")} className="px-2 py-1 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600" title="Todos como NC">✗</button>
+                          <button onClick={() => handleMarkNRAll(nr.id, "na")} className="px-2 py-1 rounded bg-gray-500 text-white text-xs font-bold hover:bg-gray-600" title="Todos como N/A">N/A</button>
                         </div>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                  </div>
 
-        {/* Action Buttons */}
-        <button
-          onClick={() => {
-            handleSave();
-            completeMutation.mutate();
-          }}
-          disabled={!canFinish || completeMutation.isPending}
-          className={`w-full py-4 rounded-lg font-bold text-lg mb-3 transition-all flex items-center justify-center gap-2 ${
-            canFinish
-              ? "bg-green-500 text-white hover:bg-green-600"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-          data-testid="button-finish"
-        >
-          {completeMutation.isPending ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <CheckCircle2 className="w-5 h-5" />
-          )}
-          Finalizar e Gerar Relatório
-        </button>
+                  {/* Itens */}
+                  {!isCollapsed && (
+                    <div>
+                      {nrItems.map((item, itemIndex) => {
+                        const itemResponse = responses[item.id];
+                        const currentResponse = itemResponse?.response;
 
-        <Link href="/dashboard">
-          <button className="w-full py-4 rounded-lg font-bold text-lg bg-gray-500 text-white hover:bg-gray-600 transition-all" data-testid="button-cancel">
-            ← Cancelar Inspeção
-          </button>
-        </Link>
+                        return (
+                          <div key={item.id} className="p-4 border-b border-gray-100 last:border-b-0">
+                            <div className="flex items-start gap-2 mb-3">
+                              {item.required && (
+                                <span className="text-red-500 text-xs font-bold flex-shrink-0 mt-0.5">*</span>
+                              )}
+                              <p className="font-medium text-gray-800 leading-relaxed text-sm">
+                                {itemIndex + 1}. {item.text}
+                              </p>
+                            </div>
+
+                            {/* Botões de resposta */}
+                            <div className="flex gap-2 mb-3">
+                              <button
+                                onClick={() => handleResponse(item.id, "ok")}
+                                className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "ok" ? "bg-green-500 text-white border-green-500" : "bg-white text-gray-700 border-gray-200 hover:border-green-300"}`}
+                              >
+                                ✓ Conf.
+                              </button>
+                              <button
+                                onClick={() => handleResponse(item.id, "nc")}
+                                className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "nc" ? "bg-red-500 text-white border-red-500" : "bg-white text-gray-700 border-gray-200 hover:border-red-300"}`}
+                              >
+                                ✗ NC
+                              </button>
+                              <button
+                                onClick={() => handleResponse(item.id, "na")}
+                                className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "na" ? "bg-gray-500 text-white border-gray-500" : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"}`}
+                              >
+                                N/A
+                              </button>
+                            </div>
+
+                            {/* Observação */}
+                            <div className="pt-3 border-t border-dashed border-gray-200">
+                              <input
+                                type="text"
+                                placeholder="Observação (opcional)"
+                                value={itemResponse?.observation || ""}
+                                onChange={(e) => handleObservation(item.id, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-[#FFD100]"
+                              />
+
+                              {/* Fotos — só para NC */}
+                              {currentResponse === "nc" && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-all ${(itemResponse?.photos?.length || 0) > 0 ? "bg-blue-50 border-2 border-blue-500 text-blue-700" : "bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 hover:border-gray-400"}`}>
+                                    <Camera className="w-4 h-4" />
+                                    {(itemResponse?.photos?.length || 0) > 0 ? `${itemResponse.photos.length} foto(s)` : "Adicionar Foto"}
+                                    <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files)} />
+                                  </label>
+                                  {itemResponse?.photos?.map((photo, photoIndex) => (
+                                    <div key={photoIndex} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                                      <img src={photo} alt="" className="w-full h-full object-cover" />
+                                      <button onClick={() => handleRemovePhoto(item.id, photoIndex)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Plano de ação — só para NC */}
+                            {currentResponse === "nc" && (
+                              <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                                <div className="text-sm font-bold text-red-700 mb-2">⚠️ Plano de Ação</div>
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div>
+                                    <label className="text-xs text-gray-600 block mb-1">Responsável</label>
+                                    <input type="text" placeholder="Quem vai corrigir?" value={itemResponse?.actionPlan?.responsible || ""} onChange={(e) => handleActionPlan(item.id, "responsible", e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]" />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-600 block mb-1">Prazo</label>
+                                    <input type="date" value={itemResponse?.actionPlan?.deadline || ""} onChange={(e) => handleActionPlan(item.id, "deadline", e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-xs text-gray-600 block mb-1">Prioridade</label>
+                                  <select value={itemResponse?.actionPlan?.priority || ""} onChange={(e) => handleActionPlan(item.id, "priority", e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]">
+                                    <option value="">Selecione...</option>
+                                    <option value="alta">Alta — Risco Grave/Iminente</option>
+                                    <option value="media">Média — Risco Moderado</option>
+                                    <option value="baixa">Baixa — Risco Menor</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Observações gerais */}
+            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Observações Gerais</label>
+              <textarea
+                value={formData.observations}
+                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                placeholder="Condições gerais da obra, pontos de atenção, contexto da inspeção..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#FFD100] resize-none"
+              />
+            </div>
+
+            {/* Botões de ação */}
+            <button
+              onClick={() => { handleSave(); completeMutation.mutate(); }}
+              disabled={!canFinish || completeMutation.isPending}
+              className={`w-full py-4 rounded-xl font-bold text-lg mb-3 transition-all flex items-center justify-center gap-2 ${canFinish ? "bg-green-500 text-white hover:bg-green-600" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+            >
+              {completeMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+              {canFinish ? "Finalizar e Gerar Relatório" : `Responda mais ${totalItems - stats.answered} item(s)`}
+            </button>
+
+            <Link href="/dashboard">
+              <button className="w-full py-3 rounded-xl font-bold text-base bg-gray-500 text-white hover:bg-gray-600 transition-all">
+                ← Voltar ao Dashboard
+              </button>
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );
