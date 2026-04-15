@@ -18,6 +18,8 @@ import {
   ClipboardList,
   ChevronDown,
   ChevronUp,
+  Crown,
+  ImageIcon,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +48,7 @@ interface NRChecklist {
 interface ChecklistData {
   selectedNRIds: number[];
   responses: Record<string, ItemResponse>;
+  companyLogo?: string;
 }
 
 export default function InspectionPage() {
@@ -66,6 +69,7 @@ export default function InspectionPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<number, boolean>>({});
   const [step, setStep] = useState<"select-nr" | "checklist">("select-nr");
+  const [companyLogo, setCompanyLogo] = useState<string>("");
 
   const { data: inspection, isLoading } = useQuery({
     queryKey: ["/api/inspections", inspectionId],
@@ -75,6 +79,13 @@ export default function InspectionPage() {
   const { data: nrChecklists = [] } = useQuery<NRChecklist[]>({
     queryKey: ["/api/nr-checklists"],
   });
+
+  const { data: subscription } = useQuery<{
+    plan?: { canUploadLogo?: boolean };
+  }>({
+    queryKey: ["/api/subscription"],
+  });
+  const canUploadLogo = subscription?.plan?.canUploadLogo ?? false;
 
   const selectedNRs = useMemo(
     () => nrChecklists.filter((nr) => selectedNRIds.includes(nr.id)),
@@ -125,6 +136,7 @@ export default function InspectionPage() {
         } else {
           // legacy format (old numeric keys) — ignore, start fresh
         }
+        if (saved.companyLogo) setCompanyLogo(saved.companyLogo);
       }
     }
   }, [inspection]);
@@ -171,6 +183,7 @@ export default function InspectionPage() {
   const buildChecklistData = (): ChecklistData => ({
     selectedNRIds,
     responses,
+    companyLogo: companyLogo || undefined,
   });
 
   const handleSave = () => {
@@ -383,6 +396,58 @@ export default function InspectionPage() {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Responsável pela Inspeção *</label>
                   <Input value={formData.inspectorName} onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })} placeholder="Nome completo do técnico ou engenheiro" className="border-2 border-gray-200 focus:border-[#FFD100]" />
+                </div>
+
+                {/* Logo da empresa */}
+                <div>
+                  <label className="flex text-sm font-semibold text-gray-700 mb-1 items-center gap-1.5">
+                    <Crown className="w-3.5 h-3.5 text-[#FFD100]" />
+                    Logo da Empresa (no PDF)
+                  </label>
+                  {canUploadLogo ? (
+                    <div className="flex items-center gap-3">
+                      <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 cursor-pointer hover:border-[#FFD100] transition-colors bg-gray-50">
+                        <ImageIcon className="w-5 h-5 text-gray-400" />
+                        <span className="text-sm text-gray-500">
+                          {companyLogo ? "Trocar imagem" : "Selecionar logo"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setCompanyLogo(ev.target?.result as string);
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
+                      {companyLogo && (
+                        <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#FFD100] bg-white flex items-center justify-center p-1">
+                          <img src={companyLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                          <button
+                            onClick={() => setCompanyLogo("")}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link href="/pricing">
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-[#FFD100] transition-colors">
+                        <Crown className="w-5 h-5 text-[#FFD100] flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-gray-700">Disponível nos planos pagos</div>
+                          <div className="text-xs text-gray-400">Adicione sua logo no PDF do relatório</div>
+                        </div>
+                        <span className="ml-auto bg-[#FFD100] text-[#1a1d23] text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">Upgrade</span>
+                      </div>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

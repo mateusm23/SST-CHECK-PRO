@@ -391,7 +391,7 @@ export default function LandingPage() {
               <div className="text-4xl md:text-5xl mb-4 md:mb-6">📱</div>
               <h3 className="text-lg md:text-xl font-bold mb-3 text-[#FFD100]">Você Coleta os Dados</h3>
               <p className="text-sm md:text-base text-[#B8BCC4] leading-relaxed">
-                No canteiro de obras, use o app móvel para marcar itens do checklist e tirar fotos das não conformidades. Funciona offline.
+                No canteiro de obras, use o celular para marcar itens do checklist e tirar fotos das não conformidades diretamente no laudo.
               </p>
             </div>
 
@@ -415,7 +415,7 @@ export default function LandingPage() {
               <div className="text-4xl md:text-5xl mb-4 md:mb-6">📄</div>
               <h3 className="text-lg md:text-xl font-bold mb-3 text-[#FFD100]">Recebe o PDF Pronto</h3>
               <p className="text-sm md:text-base text-[#B8BCC4] leading-relaxed">
-                Em segundos, o laudo em PDF está pronto com logo, fotos, GPS e assinatura digital. Envie por email ou WhatsApp direto do app.
+                Em segundos, o laudo em PDF está pronto com logo, fotos organizadas e plano de ação. Compartilhe por email ou WhatsApp direto da plataforma.
               </p>
             </div>
           </div>
@@ -440,9 +440,9 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {[
               { icon: "📋", title: "Checklists Personalizáveis", desc: "Modelos prontos de todas as NRs ou crie os seus personalizados. Adaptáveis a qualquer tipo de obra ou indústria." },
-              { icon: "📷", title: "Registro Fotográfico", desc: "Tire fotos direto do celular e vincule a cada item. Evidências visuais com GPS e timestamp automáticos." },
+              { icon: "📷", title: "Registro Fotográfico", desc: "Tire fotos direto do celular e vincule a cada não conformidade. Evidências visuais organizadas automaticamente no relatório." },
               { icon: "⚙️", title: "Geração Automatizada", desc: "Sistema analisa seus dados e gera automaticamente relatórios técnicos padronizados e profissionais em segundos." },
-              { icon: "📄", title: "PDF Profissional", desc: "Laudos com logo da empresa, fotos organizadas, localização GPS, gráficos de conformidade e assinatura digital." },
+              { icon: "📄", title: "PDF Profissional", desc: "Laudos com logo da empresa, fotos organizadas das NCs, resumo de conformidade e espaço para assinatura." },
               { icon: "☁️", title: "Armazenamento Nuvem", desc: "Todos os laudos salvos com segurança na nuvem. Busca rápida por obra, data, NR ou palavra-chave. Acesso de qualquer lugar." },
               { icon: "📶", title: "Modo Offline", desc: "Faça inspeções mesmo sem internet. Os dados sincronizam automaticamente quando você conectar novamente." },
               { icon: "✉️", title: "Envio Instantâneo", desc: "Compartilhe relatórios por email ou WhatsApp direto do canteiro. Cliente recebe o laudo ainda quente." },
@@ -521,7 +521,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {[
               { initial: "RC", name: "Roberto Costa", role: "Engenheiro de Segurança • São Paulo", text: "Antes levava 3 horas para formatar um laudo no Word. Agora faço em 10 minutos e o resultado fica até mais profissional. Minha produtividade aumentou demais.", result: "✓ 70% menos tempo em laudos" },
-              { initial: "MF", name: "Mariana Fonseca", role: "Técnica de Segurança • Rio de Janeiro", text: "O modo offline é sensacional. Faço inspeções em locais remotos sem sinal e depois sincroniza tudo. O sistema realmente gera relatórios bem completos e profissionais.", result: "✓ 12 laudos/dia em vez de 2" },
+              { initial: "MF", name: "Mariana Fonseca", role: "Técnica de Segurança • Rio de Janeiro", text: "Consigo fazer muito mais inspeções por dia porque o preenchimento é muito mais rápido. O sistema gera relatórios bem completos e profissionais que impressionam os clientes.", result: "✓ 12 laudos/dia em vez de 2" },
               { initial: "PS", name: "Pedro Santos", role: "Consultor SST Autônomo • Minas Gerais", text: "Consegui aumentar meu faturamento em 300% porque agora consigo atender muito mais clientes por mês. O SST Check Pro pagou o investimento em 2 dias de uso.", result: "✓ 300% aumento no faturamento" },
             ].map((testimonial, i) => (
               <div
@@ -573,12 +573,12 @@ export default function LandingPage() {
               <div className="text-4xl md:text-5xl lg:text-6xl font-black mb-2">
                 R$0<small className="text-xl md:text-2xl text-[#8B9099] font-medium">/mês</small>
               </div>
-              <p className="text-sm md:text-base text-[#8B9099] mb-6 md:mb-8">1 laudo por mês</p>
+              <p className="text-sm md:text-base text-[#8B9099] mb-6 md:mb-8">3 laudos por mês</p>
               <ul className="text-left space-y-3 md:space-y-4 mb-6 md:mb-10">
-                {["1 laudo/mês", "Checklists de NRs", "Upload de fotos com GPS", "PDF com marca d'água", "Modo offline", "Suporte por email"].map((feature) => (
+                {["3 laudos/mês", "Checklists de NRs", "Upload de fotos nas NCs", "Geração automática de PDF", "Suporte por email"].map((feature) => (
                   <li key={feature} className="flex gap-3 text-sm md:text-base">
                     <span className="text-[#34C759] font-bold shrink-0">✓</span>
-                    <span className={feature.includes("1 laudo") ? "font-bold" : ""}>{feature}</span>
+                    <span className={feature.includes("3 laudos") ? "font-bold" : ""}>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -602,10 +602,10 @@ export default function LandingPage() {
               </div>
               <p className="text-sm md:text-base text-[#8B9099] mb-6 md:mb-8">30 laudos por mês</p>
               <ul className="text-left space-y-3 md:space-y-4 mb-6 md:mb-10">
-                {["30 laudos/mês", "Todos os checklists de NRs", "Upload de fotos com GPS", "PDF sem marca d'água", "Logo da sua empresa", "Planos de ação inteligentes", "Dashboard com métricas", "Modo offline", "Suporte prioritário"].map((feature) => (
+                {["30 laudos/mês", "Todos os checklists de NRs", "Upload de fotos nas NCs", "PDF profissional", "Planos de ação gerados por IA", "Exportação em Excel", "Suporte por e-mail em até 24h"].map((feature) => (
                   <li key={feature} className="flex gap-3 text-sm md:text-base">
                     <span className="text-[#34C759] font-bold shrink-0">✓</span>
-                    <span className={feature.includes("30 laudos") || feature.includes("PDF sem") || feature.includes("Logo") || feature.includes("Planos") ? "font-bold" : ""}>{feature}</span>
+                    <span className={feature.includes("30 laudos") || feature.includes("Planos de ação") || feature.includes("Excel") ? "font-bold" : ""}>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -626,10 +626,10 @@ export default function LandingPage() {
               </div>
               <p className="text-sm md:text-base text-[#8B9099] mb-6 md:mb-8">Laudos ilimitados</p>
               <ul className="text-left space-y-3 md:space-y-4 mb-6 md:mb-10">
-                {["Laudos ilimitados", "Múltiplas empresas/CNPJs", "Todos os checklists de NRs", "Upload de fotos com GPS", "PDF sem marca d'água + Logo", "Planos de ação inteligentes", "API de integração", "Dashboard avançado", "Modo offline", "Suporte dedicado"].map((feature) => (
+                {["Laudos ilimitados", "Múltiplas empresas/CNPJs", "Todos os checklists de NRs", "Upload de fotos nas NCs", "PDF profissional", "Planos de ação gerados por IA", "Exportação em Excel", "Suporte via WhatsApp"].map((feature) => (
                   <li key={feature} className="flex gap-3 text-sm md:text-base">
                     <span className="text-[#34C759] font-bold shrink-0">✓</span>
-                    <span className={feature.includes("ilimitados") || feature.includes("Múltiplas") || feature.includes("API") ? "font-bold" : ""}>{feature}</span>
+                    <span className={feature.includes("ilimitados") || feature.includes("Múltiplas") || feature.includes("WhatsApp") ? "font-bold" : ""}>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -709,12 +709,12 @@ export default function LandingPage() {
 
           <div className="space-y-4">
             {[
-              { q: "Como funciona o plano gratuito?", a: "Você pode criar até 3 laudos completos gratuitamente, sem precisar cadastrar cartão de crédito. Todos os recursos estão disponíveis, apenas os PDFs terão uma pequena marca d'água. É perfeito para testar a plataforma antes de assinar." },
+              { q: "Como funciona o plano gratuito?", a: "Você pode criar até 3 laudos completos por mês gratuitamente, sem precisar cadastrar cartão de crédito. Todos os recursos estão disponíveis: checklist de NRs, upload de fotos e geração de PDF. É perfeito para testar a plataforma antes de assinar." },
               { q: "Meus dados e dos meus clientes estão seguros?", a: "Sim! Utilizamos criptografia ponta a ponta, backups automáticos diários e estamos em compliance total com a LGPD. Seus dados ficam armazenados em servidores seguros na AWS (Amazon Web Services), a mesma infraestrutura usada por bancos e grandes empresas." },
-              { q: "Funciona offline? Como?", a: "Sim! Você pode fazer inspeções completas mesmo sem conexão à internet. O app salva todos os dados localmente no seu celular. Quando você conectar novamente à internet, tudo sincroniza automaticamente com a nuvem. Perfeito para canteiros de obras em áreas remotas." },
+              { q: "Funciona no celular?", a: "Sim! O SST Check Pro é um Progressive Web App (PWA) que funciona no navegador do celular, tablet ou computador. Acesse pelo navegador em qualquer dispositivo — sem precisar instalar nada." },
               { q: "O sistema realmente gera relatórios de qualidade?", a: "Sim! Nossa plataforma foi desenvolvida com base em milhares de laudos técnicos reais de engenheiros e técnicos de segurança. O sistema analisa suas respostas do checklist, organiza as fotos e gera um relatório técnico completo, profissional e padronizado seguindo as melhores práticas do setor." },
               { q: "Posso cancelar a qualquer momento?", a: "Sim, sem burocracia! O plano é mensal e você pode cancelar quando quiser direto no painel. Não há multas, taxas ou fidelidade. Mesmo após cancelar, você mantém acesso aos seus laudos já criados." },
-              { q: "Posso personalizar com a logo da minha empresa?", a: "Sim! No plano Negócios (R$29,90/mês) você pode adicionar o logo da sua empresa em todos os PDFs, personalizar cores e criar uma identidade visual única para seus laudos. Isso aumenta muito o profissionalismo e credibilidade." },
+              { q: "Posso personalizar com a logo da minha empresa?", a: "Sim! Nos planos pagos (Profissional e Negócios) você pode adicionar o logo da sua empresa em todos os PDFs, criando uma identidade visual única para seus laudos. Isso aumenta muito o profissionalismo e credibilidade." },
               { q: "Quanto tempo leva para aprender a usar?", a: "Menos de 5 minutos! A interface é super intuitiva. Se você já faz laudos manualmente, vai entender imediatamente. Além disso, temos tutoriais em vídeo e suporte por email para qualquer dúvida." },
               { q: "Funciona no computador ou só no celular?", a: "Funciona em ambos! Você pode acessar pelo navegador do computador (Windows, Mac, Linux) ou pelo app móvel (Android e iOS). Tudo sincroniza automaticamente entre os dispositivos." },
             ].map((faq, i) => (

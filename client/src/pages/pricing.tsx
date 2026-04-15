@@ -12,11 +12,11 @@ const planDetails = [
     slug: "free",
     description: "Para conhecer a plataforma",
     features: [
-      "1 laudo por mês",
-      "Checklist NR-18 completo",
+      "3 laudos por mês",
+      "Checklists de NRs",
       "Fotos nas não-conformidades",
       "Geração automática de PDF",
-      "Planos de ação manuais",
+      "Exportação em Excel",
     ],
   },
   {

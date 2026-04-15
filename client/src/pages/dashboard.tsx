@@ -107,33 +107,21 @@ export default function DashboardPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      // Track InitiateCheckout event
       if (typeof window !== 'undefined' && (window as any).gtag) {
         (window as any).gtag('event', 'begin_checkout', {
           currency: 'BRL',
           value: 9.00,
-          items: [{
-            item_id: 'professional',
-            item_name: 'Plano Profissional',
-            price: 9.00
-          }]
+          items: [{ item_id: 'professional', item_name: 'Plano Profissional', price: 9.00 }]
         });
       }
-
-      // Meta Pixel - InitiateCheckout
       if (typeof window !== 'undefined' && (window as any).fbq) {
-        (window as any).fbq('track', 'InitiateCheckout', {
-          currency: 'BRL',
-          value: 9.00
-        });
+        (window as any).fbq('track', 'InitiateCheckout', { currency: 'BRL', value: 9.00 });
       }
-
-      // Redirect directly to Stripe checkout
-      window.location.href = 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400';
-      return Promise.resolve({ url: 'https://buy.stripe.com/dRmbJ2gCHgFl5oW45X38400' });
+      const res = await apiRequest("POST", "/api/subscription/checkout", { planSlug: "professional" });
+      return res.json();
     },
-    onSuccess: () => {
-      // No need to redirect here, already done in mutationFn
+    onSuccess: (data) => {
+      if (data.url) window.location.href = data.url;
     },
   });
 
@@ -176,8 +164,8 @@ export default function DashboardPage() {
     ? Math.round(completedInspections.reduce((acc, i) => acc + (i.score || 0), 0) / completedInspections.length)
     : 0;
 
-  const isLimitReached = subscription?.plan?.slug === "free" && 
-    (subscription?.usage?.inspectionsThisMonth || 0) >= (subscription?.plan?.monthlyLimit || 1);
+  const isLimitReached = subscription?.plan?.slug === "free" &&
+    (subscription?.usage?.inspectionsThisMonth || 0) >= (subscription?.plan?.monthlyLimit || 3);
 
   const handleNewInspection = () => {
     if (isLimitReached) {
@@ -210,15 +198,12 @@ export default function DashboardPage() {
               Limite de Inspeções Atingido
             </h2>
             <p className="text-gray-600 mb-6">
-              Você já realizou sua inspeção gratuita deste mês. 
-              Faça upgrade para o plano Profissional e tenha acesso a <strong>30 inspeções mensais</strong>, 
+              Você já utilizou suas 3 inspeções gratuitas deste mês.
+              Faça upgrade para o plano Profissional e tenha acesso a <strong>30 inspeções mensais</strong>,
               planos de ação com IA e muito mais!
             </p>
 
             <div className="bg-[#FFD100]/10 rounded-xl p-4 mb-6 border border-[#FFD100]/30 relative">
-              <div className="absolute top-2 right-2 bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold">
-                20% OFF
-              </div>
               <div className="flex items-center gap-3 mb-2">
                 <Crown className="w-5 h-5 text-[#FFD100]" />
                 <span className="font-bold text-gray-900">Plano Profissional</span>

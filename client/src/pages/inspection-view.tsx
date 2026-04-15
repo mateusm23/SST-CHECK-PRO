@@ -44,6 +44,7 @@ interface NRChecklist {
 interface ChecklistData {
   selectedNRIds: number[];
   responses: Record<string, ItemResponse>;
+  companyLogo?: string;
 }
 
 export default function InspectionViewPage() {
@@ -80,6 +81,7 @@ export default function InspectionViewPage() {
   const rawChecklist = inspData?.checklistData as ChecklistData | undefined;
   const responses: Record<string, ItemResponse> = rawChecklist?.responses || {};
   const selectedNRIds: number[] = rawChecklist?.selectedNRIds || [];
+  const companyLogo: string | undefined = rawChecklist?.companyLogo;
 
   const selectedNRs = nrChecklists.filter((nr) => selectedNRIds.includes(nr.id));
 
@@ -367,18 +369,41 @@ export default function InspectionViewPage() {
           {/* Cabeçalho */}
           <div style={{ backgroundColor: "#1a1d23", padding: "24px 32px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div style={{ width: "48px", height: "48px", backgroundColor: "#FFD100", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Check style={{ width: "28px", height: "28px", color: "#1a1d23", strokeWidth: 3 }} />
+              {/* Lado esquerdo: logo da empresa OU branding SST */}
+              {companyLogo ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                  <div style={{ backgroundColor: "white", borderRadius: "8px", padding: "6px 12px", display: "flex", alignItems: "center", justifyContent: "center", maxHeight: "60px" }}>
+                    <img
+                      src={companyLogo}
+                      alt="Logo da empresa"
+                      crossOrigin="anonymous"
+                      style={{ maxHeight: "48px", maxWidth: "160px", objectFit: "contain", display: "block" }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "13px", fontWeight: "bold", color: "white" }}>Relatório de Inspeção</div>
+                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)" }}>Segurança do Trabalho</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "white" }}>SST<span style={{ color: "#FFD100" }}>Check</span>Pro</div>
-                  <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)" }}>Relatório de Inspeção de Segurança do Trabalho</div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                  <div style={{ width: "48px", height: "48px", backgroundColor: "#FFD100", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Check style={{ width: "28px", height: "28px", color: "#1a1d23", strokeWidth: 3 }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "24px", fontWeight: "bold", color: "white" }}>SST<span style={{ color: "#FFD100" }}>Check</span>Pro</div>
+                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)" }}>Relatório de Inspeção de Segurança do Trabalho</div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Lado direito: número da inspeção + SST branding (quando tem logo) */}
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", textTransform: "uppercase" }}>Inspeção N.</div>
                 <div style={{ fontSize: "32px", fontWeight: "bold", color: "#FFD100" }}>#{inspectionId.toString().padStart(4, "0")}</div>
+                {companyLogo && (
+                  <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>via SSTCheckPro</div>
+                )}
               </div>
             </div>
           </div>

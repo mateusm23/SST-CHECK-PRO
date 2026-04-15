@@ -8,6 +8,7 @@ import { generateActionPlans } from "./geminiService";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { subscriptionPlans } from "@shared/schema";
 import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 // VIP emails with full unlimited access (configure via VIP_EMAILS env var, comma-separated)
 const VIP_EMAILS = (process.env.VIP_EMAILS || "")
@@ -489,12 +490,21 @@ export async function registerRoutes(
 
 export async function seedDatabase() {
   const existingPlans = await storage.getSubscriptionPlans();
+  // Fix free plan limit if it was previously set to 1
+  const freePlan = existingPlans.find(p => p.slug === "free");
+  if (freePlan && (freePlan as any).monthlyLimit === 1) {
+    await db.update(subscriptionPlans)
+      .set({ monthlyLimit: 3 } as any)
+      .where(eq((subscriptionPlans as any).slug, "free"));
+    console.log("Updated free plan monthlyLimit from 1 to 3");
+  }
+
   if (existingPlans.length === 0) {
     await db.insert(subscriptionPlans).values([
       {
         name: "Grátis",
         slug: "free",
-        monthlyLimit: 1,
+        monthlyLimit: 3,
         canUploadLogo: false,
         price: 0,
       },
