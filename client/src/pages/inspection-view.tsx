@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { pdf } from "@react-pdf/renderer";
+import InspectionPDFDocument from "@/components/InspectionPDF";
 import * as XLSX from "xlsx";
 
 interface ItemResponse {
@@ -51,7 +51,6 @@ export default function InspectionViewPage() {
   const [, params] = useRoute("/inspection/:id/view");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const pdfRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const inspectionId = params?.id ? parseInt(params.id) : 0;
@@ -199,73 +198,31 @@ export default function InspectionViewPage() {
 
   // ── PDF ──
   const handleDownloadPDF = async () => {
-    if (!pdfRef.current) return;
     setIsGeneratingPDF(true);
     toast({ title: "Gerando PDF...", description: "Aguarde enquanto preparamos seu documento" });
     try {
-      // Garante que todas as imagens estejam carregadas antes de capturar
-      const images = pdfRef.current.querySelectorAll("img");
-      await Promise.all(
-        Array.from(images).map(
-          (img) =>
-            new Promise<void>((resolve) => {
-              if (img.complete) { resolve(); return; }
-              img.onload = () => resolve();
-              img.onerror = () => resolve();
-            })
-        )
-      );
-
-      const element = pdfRef.current;
-      const naturalHeight = element.scrollHeight;
-
-      const canvas = await html2canvas(element, {
-        scale: 2.5,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        width: 794,
-        height: naturalHeight,
-        windowWidth: 794,
-        windowHeight: naturalHeight,
-        logging: false,
-        imageTimeout: 15000,
-      });
-
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const PAGE_W = 210;
-      const PAGE_H = 297;
-
-      // px por mm no canvas
-      const pxPerMm = canvas.width / PAGE_W;
-      const pageHeightPx = PAGE_H * pxPerMm;
-      const totalPages = Math.ceil(canvas.height / pageHeightPx);
-
-      for (let page = 0; page < totalPages; page++) {
-        if (page > 0) pdf.addPage();
-
-        // Cria canvas temporário para esta página
-        const pageCanvas = document.createElement("canvas");
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = Math.min(pageHeightPx, canvas.height - page * pageHeightPx);
-        const ctx = pageCanvas.getContext("2d")!;
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.drawImage(
-          canvas,
-          0, page * pageHeightPx,          // origem no canvas grande
-          canvas.width, pageCanvas.height,  // tamanho a copiar
-          0, 0,                             // destino no canvas pequeno
-          canvas.width, pageCanvas.height
-        );
-
-        const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
-        const pageImgHeight = (pageCanvas.height / pxPerMm);
-        pdf.addImage(imgData, "JPEG", 0, 0, PAGE_W, pageImgHeight);
-      }
-
       const fileName = `inspecao-sst-${inspectionId.toString().padStart(4, "0")}-${new Date().toISOString().split("T")[0]}.pdf`;
-      pdf.save(fileName);
+      const blob = await pdf(
+        <InspectionPDFDocument
+          inspectionId={inspectionId}
+          inspData={inspData}
+          selectedNRs={selectedNRs}
+          nonConformities={nonConformities}
+          responses={responses}
+          companyLogo={companyLogo}
+          okCount={okCount}
+          ncCount={ncCount}
+          naCount={naCount}
+          totalAnswered={totalAnswered}
+          conformityScore={conformityScore}
+        />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
       toast({ title: "PDF gerado!", description: fileName });
     } catch (error) {
       console.error(error);
@@ -364,7 +321,7 @@ export default function InspectionViewPage() {
 
       {/* PDF Content — A4 */}
       <div className="flex justify-center px-2 print:px-0">
-        <div ref={pdfRef} className="bg-white shadow-lg print:shadow-none" style={{ width: "794px", fontFamily: "Arial, Helvetica, sans-serif" }}>
+        <div className="bg-white shadow-lg print:shadow-none" style={{ width: "794px", fontFamily: "Arial, Helvetica, sans-serif" }}>
 
           {/* Cabeçalho */}
           <div style={{ backgroundColor: "#1a1d23", padding: "24px 32px" }}>
