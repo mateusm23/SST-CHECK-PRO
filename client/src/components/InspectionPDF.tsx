@@ -63,7 +63,7 @@ const formatDateShort = (dateStr: string) =>
 
 const getPriority = (p: string) => {
   if (p === 'alta') return { text: 'ALTA', color: '#dc2626' };
-  if (p === 'media') return { text: 'MEDIA', color: '#ea580c' };
+  if (p === 'media') return { text: 'MÉDIA', color: '#ea580c' };
   if (p === 'baixa') return { text: 'BAIXA', color: '#16a34a' };
   return { text: '-', color: '#6b7280' };
 };
@@ -84,13 +84,15 @@ const C = {
 
 // ── Styles ──
 const s = StyleSheet.create({
+  // Page — paddingBottom reserva espaço pro rodapé fixo
   page: {
     backgroundColor: C.white,
     fontFamily: 'Helvetica',
     fontSize: 10,
+    paddingBottom: 36,
   },
 
-  // Header
+  // ── Header ──
   header: {
     backgroundColor: C.dark,
     paddingVertical: 18,
@@ -104,23 +106,25 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   logoBox: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     backgroundColor: C.yellow,
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  logoText: {
-    fontSize: 20,
+  logoCheck: {
+    fontSize: 22,
+    fontFamily: 'Helvetica-Bold',
     color: C.dark,
-    fontFamily: 'Helvetica-Bold',
   },
-  brandName: {
-    fontSize: 18,
+  brandBlock: {
+    flexDirection: 'column',
+  },
+  brandRow: {
+    fontSize: 20,
     fontFamily: 'Helvetica-Bold',
-    color: C.white,
   },
   brandSub: {
     fontSize: 8,
@@ -135,11 +139,16 @@ const s = StyleSheet.create({
     color: 'rgba(255,255,255,0.5)',
   },
   inspNumber: {
-    fontSize: 26,
+    fontSize: 28,
     fontFamily: 'Helvetica-Bold',
     color: C.yellow,
   },
-  // Company logo variant
+  viaLabel: {
+    fontSize: 8,
+    color: 'rgba(255,255,255,0.3)',
+    marginTop: 2,
+  },
+  // Variante com logo da empresa
   companyLogoBox: {
     backgroundColor: C.white,
     borderRadius: 6,
@@ -163,13 +172,8 @@ const s = StyleSheet.create({
     color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
   },
-  viaLabel: {
-    fontSize: 8,
-    color: 'rgba(255,255,255,0.3)',
-    marginTop: 2,
-  },
 
-  // NR bar
+  // ── NR Bar ──
   nrBar: {
     backgroundColor: C.yellow,
     paddingVertical: 7,
@@ -198,7 +202,7 @@ const s = StyleSheet.create({
     color: C.yellow,
   },
 
-  // Info section
+  // ── Info Section ──
   infoSection: {
     paddingVertical: 18,
     paddingHorizontal: 28,
@@ -244,7 +248,7 @@ const s = StyleSheet.create({
     color: '#374151',
   },
 
-  // Stats
+  // ── Stats ──
   statsRow: {
     paddingVertical: 14,
     paddingHorizontal: 22,
@@ -273,7 +277,7 @@ const s = StyleSheet.create({
     marginTop: 3,
   },
 
-  // NC section
+  // ── NC Section ──
   ncSection: {
     paddingVertical: 18,
     paddingHorizontal: 28,
@@ -292,6 +296,20 @@ const s = StyleSheet.create({
     borderColor: '#fecaca',
     borderStyle: 'solid',
     marginBottom: 12,
+  },
+  ncBannerIcon: {
+    width: 18,
+    height: 18,
+    backgroundColor: C.red,
+    borderRadius: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  ncBannerIconText: {
+    color: C.white,
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
   },
   ncBannerText: {
     fontSize: 11,
@@ -362,8 +380,6 @@ const s = StyleSheet.create({
     fontSize: 10,
     color: '#374151',
   },
-
-  // Photos
   photosContainer: {
     marginHorizontal: 12,
     marginBottom: 8,
@@ -387,8 +403,6 @@ const s = StyleSheet.create({
     marginRight: 5,
     objectFit: 'cover',
   },
-
-  // Action plan
   apBox: {
     marginHorizontal: 12,
     marginBottom: 12,
@@ -423,7 +437,7 @@ const s = StyleSheet.create({
     color: C.text,
   },
 
-  // Checklist
+  // ── Checklist ──
   clSection: {
     paddingTop: 18,
     paddingHorizontal: 28,
@@ -516,8 +530,8 @@ const s = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // Footer
-  footer: {
+  // ── Assinatura (flui no fim do conteúdo) ──
+  signatureSection: {
     paddingVertical: 18,
     paddingHorizontal: 28,
     borderTopWidth: 2,
@@ -528,39 +542,62 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-  footerLine: {
+  sigLine: {
     width: 160,
     borderBottomWidth: 1,
     borderBottomColor: '#374151',
     borderBottomStyle: 'solid',
     marginBottom: 5,
   },
-  footerName: {
+  sigName: {
     fontSize: 11,
     fontFamily: 'Helvetica-Bold',
     color: C.text,
   },
-  footerRole: {
+  sigRole: {
     fontSize: 9,
     color: C.muted,
     marginTop: 2,
   },
-  footerRight: {
+  sigRight: {
     alignItems: 'flex-end',
   },
-  footerDate: {
+  sigDate: {
     fontSize: 8,
     color: C.gray,
     marginBottom: 2,
   },
-  footerBrand: {
+  sigBrand: {
     fontSize: 9,
     fontFamily: 'Helvetica-Bold',
     color: C.dark,
   },
-  footerUrl: {
+  sigUrl: {
     fontSize: 8,
     color: C.gray,
+  },
+
+  // ── Rodapé fixo (todas as páginas) ──
+  pageFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 28,
+    backgroundColor: C.dark,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+  },
+  pageFooterBrand: {
+    fontSize: 8,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  pageFooterPage: {
+    fontSize: 8,
+    color: C.yellow,
+    fontFamily: 'Helvetica-Bold',
   },
 });
 
@@ -604,11 +641,18 @@ export default function InspectionPDFDocument({
             ) : (
               <>
                 <View style={s.logoBox}>
-                  <Text style={s.logoText}>✓</Text>
+                  <Text style={s.logoCheck}>✓</Text>
                 </View>
-                <View>
-                  <Text style={s.brandName}>SSTCheckPro</Text>
-                  <Text style={s.brandSub}>Relatório de Inspeção de Segurança do Trabalho</Text>
+                <View style={s.brandBlock}>
+                  {/* SST em branco, Check em amarelo, Pro em branco */}
+                  <Text style={s.brandRow}>
+                    <Text style={{ color: C.white }}>SST</Text>
+                    <Text style={{ color: C.yellow }}>Check</Text>
+                    <Text style={{ color: C.white }}>Pro</Text>
+                  </Text>
+                  <Text style={s.brandSub}>
+                    Relatório de Inspeção de Segurança do Trabalho
+                  </Text>
                 </View>
               </>
             )}
@@ -681,7 +725,7 @@ export default function InspectionPDFDocument({
             },
             {
               val: String(ncCount),
-              lbl: 'NAO CONFORME',
+              lbl: 'NÃO CONFORME',
               bg: '#fef2f2',
               border: '#fecaca',
               valColor: C.red,
@@ -706,43 +750,42 @@ export default function InspectionPDFDocument({
           ))}
         </View>
 
-        {/* ── Non-Conformities ── */}
+        {/* ── Não Conformidades ── */}
         {nonConformities.length > 0 && (
           <View style={s.ncSection}>
+            {/* Banner com ícone de alerta */}
             <View style={s.ncBanner}>
+              <View style={s.ncBannerIcon}>
+                <Text style={s.ncBannerIconText}>!</Text>
+              </View>
               <Text style={s.ncBannerText}>
-                ! NÃO CONFORMIDADES IDENTIFICADAS ({ncCount})
+                NÃO CONFORMIDADES IDENTIFICADAS ({ncCount})
               </Text>
             </View>
 
             {nonConformities.map(({ nrNumber, nrName, item, data }, idx) => (
               <View key={item.id} style={s.ncCard} wrap={false}>
-                {/* Card header */}
                 <View style={s.ncCardHead}>
                   <View style={s.ncBadge}>
                     <Text style={s.ncBadgeText}>{idx + 1}</Text>
                   </View>
                   <View style={s.ncCardBody}>
                     <Text style={s.ncCardTitle}>{item.text}</Text>
-                    <Text style={s.ncCardNR}>
-                      {nrNumber} — {nrName}
-                    </Text>
+                    <Text style={s.ncCardNR}>{nrNumber} — {nrName}</Text>
                   </View>
                 </View>
 
-                {/* Observation */}
                 {data.observation ? (
                   <View style={s.ncObsBox}>
-                    <Text style={s.ncObsLbl}>OBSERVACAO</Text>
+                    <Text style={s.ncObsLbl}>OBSERVAÇÃO</Text>
                     <Text style={s.ncObsTxt}>{data.observation}</Text>
                   </View>
                 ) : null}
 
-                {/* Photos */}
                 {data.photos && data.photos.length > 0 && (
                   <View style={s.photosContainer}>
                     <Text style={s.photosLbl}>
-                      EVIDENCIAS FOTOGRAFICAS ({data.photos.length})
+                      EVIDÊNCIAS FOTOGRÁFICAS ({data.photos.length})
                     </Text>
                     <View style={s.photosRow}>
                       {data.photos.slice(0, 3).map((photo, pi) => (
@@ -752,16 +795,15 @@ export default function InspectionPDFDocument({
                   </View>
                 )}
 
-                {/* Action Plan */}
                 {data.actionPlan &&
                   (data.actionPlan.responsible ||
                     data.actionPlan.deadline ||
                     data.actionPlan.priority) && (
                     <View style={s.apBox}>
-                      <Text style={s.apLabel}>PLANO DE ACAO</Text>
+                      <Text style={s.apLabel}>PLANO DE AÇÃO</Text>
                       <View style={s.apRow}>
                         <View style={s.apItem}>
-                          <Text style={s.apItemLbl}>Responsavel</Text>
+                          <Text style={s.apItemLbl}>Responsável</Text>
                           <Text style={s.apItemVal}>
                             {data.actionPlan.responsible || '—'}
                           </Text>
@@ -793,56 +835,50 @@ export default function InspectionPDFDocument({
           </View>
         )}
 
-        {/* ── Checklist ── */}
+        {/* ── Checklist Completo ── */}
         <View style={s.clSection}>
           <Text style={s.clTitle}>CHECKLIST COMPLETO</Text>
 
           {selectedNRs.map((nr) => (
             <View key={nr.id} style={s.nrGroup}>
-              <View style={s.nrGroupHead}>
-                <View style={s.nrAccent} />
-                <Text style={s.nrGroupName}>
-                  {nr.nrNumber} — {nr.nrName}
-                </Text>
+              {/* Header + primeiro item juntos para evitar header órfão */}
+              <View wrap={false}>
+                <View style={s.nrGroupHead}>
+                  <View style={s.nrAccent} />
+                  <Text style={s.nrGroupName}>
+                    {nr.nrNumber} — {nr.nrName}
+                  </Text>
+                </View>
+                <View style={s.nrItemsBorder}>
+                  {nr.items.slice(0, 1).map((item, idx) => {
+                    const r = responses[item.id];
+                    const status = r?.response;
+                    return (
+                      <ChecklistItem
+                        key={item.id}
+                        item={item}
+                        idx={idx}
+                        status={status}
+                        observation={r?.observation}
+                      />
+                    );
+                  })}
+                </View>
               </View>
+
+              {/* Demais itens */}
               <View style={s.nrItemsBorder}>
-                {nr.items.map((item, idx) => {
+                {nr.items.slice(1).map((item, idx) => {
                   const r = responses[item.id];
                   const status = r?.response;
-                  const dotColor =
-                    status === 'ok'
-                      ? C.green
-                      : status === 'nc'
-                      ? C.red
-                      : status === 'na'
-                      ? C.gray
-                      : '#e5e7eb';
-                  const dotSymbol =
-                    status === 'ok' ? '✓' : status === 'nc' ? '✗' : status === 'na' ? '-' : '';
-                  const statusText =
-                    status === 'ok' ? 'CONF' : status === 'nc' ? 'NC' : status === 'na' ? 'N/A' : '-';
-                  const statusColor =
-                    status === 'ok' ? C.green : status === 'nc' ? C.red : C.muted;
-
                   return (
-                    <View
+                    <ChecklistItem
                       key={item.id}
-                      style={idx % 2 === 0 ? s.clItemEven : s.clItemOdd}
-                      wrap={false}
-                    >
-                      <View style={[s.statusCircle, { backgroundColor: dotColor }]}>
-                        <Text style={s.statusCircleText}>{dotSymbol}</Text>
-                      </View>
-                      <View style={s.clItemTextCol}>
-                        <Text style={s.clItemText}>
-                          {idx + 1}. {item.text}
-                        </Text>
-                        {r?.observation ? (
-                          <Text style={s.clItemObs}>{r.observation}</Text>
-                        ) : null}
-                      </View>
-                      <Text style={[s.clStatus, { color: statusColor }]}>{statusText}</Text>
-                    </View>
+                      item={item}
+                      idx={idx + 1}
+                      status={status}
+                      observation={r?.observation}
+                    />
                   );
                 })}
               </View>
@@ -850,21 +886,75 @@ export default function InspectionPDFDocument({
           ))}
         </View>
 
-        {/* ── Footer ── */}
-        <View style={s.footer}>
+        {/* ── Assinatura (fim do documento) ── */}
+        <View style={s.signatureSection}>
           <View>
-            <View style={s.footerLine} />
-            <Text style={s.footerName}>{inspData?.inspectorName || 'Responsável'}</Text>
-            <Text style={s.footerRole}>Técnico / Engenheiro de Segurança do Trabalho</Text>
+            <View style={s.sigLine} />
+            <Text style={s.sigName}>{inspData?.inspectorName || 'Responsável'}</Text>
+            <Text style={s.sigRole}>Técnico / Engenheiro de Segurança do Trabalho</Text>
           </View>
-          <View style={s.footerRight}>
-            <Text style={s.footerDate}>Gerado em {formatDate(new Date().toISOString())}</Text>
-            <Text style={s.footerBrand}>SST Check Pro</Text>
-            <Text style={s.footerUrl}>sstcheckpro.com.br</Text>
+          <View style={s.sigRight}>
+            <Text style={s.sigDate}>Gerado em {formatDate(new Date().toISOString())}</Text>
+            <Text style={s.sigBrand}>SST Check Pro</Text>
+            <Text style={s.sigUrl}>sstcheckpro.com.br</Text>
           </View>
+        </View>
+
+        {/* ── Rodapé fixo em todas as páginas ── */}
+        <View style={s.pageFooter} fixed>
+          <Text style={s.pageFooterBrand}>SST Check Pro — sstcheckpro.com.br</Text>
+          <Text
+            style={s.pageFooterPage}
+            render={({ pageNumber, totalPages }) =>
+              `Página ${pageNumber} de ${totalPages}`
+            }
+          />
         </View>
 
       </Page>
     </Document>
+  );
+}
+
+// ── Sub-componente item do checklist ──
+function ChecklistItem({
+  item,
+  idx,
+  status,
+  observation,
+}: {
+  item: { id: string; text: string };
+  idx: number;
+  status: 'ok' | 'nc' | 'na' | null | undefined;
+  observation?: string;
+}) {
+  const dotColor =
+    status === 'ok'
+      ? C.green
+      : status === 'nc'
+      ? C.red
+      : status === 'na'
+      ? C.gray
+      : '#e5e7eb';
+  const dotSymbol =
+    status === 'ok' ? '✓' : status === 'nc' ? '✗' : status === 'na' ? '-' : '';
+  const statusText =
+    status === 'ok' ? 'CONF' : status === 'nc' ? 'NC' : status === 'na' ? 'N/A' : '-';
+  const statusColor =
+    status === 'ok' ? C.green : status === 'nc' ? C.red : C.muted;
+
+  return (
+    <View style={idx % 2 === 0 ? s.clItemEven : s.clItemOdd} wrap={false}>
+      <View style={[s.statusCircle, { backgroundColor: dotColor }]}>
+        <Text style={s.statusCircleText}>{dotSymbol}</Text>
+      </View>
+      <View style={s.clItemTextCol}>
+        <Text style={s.clItemText}>
+          {idx + 1}. {item.text}
+        </Text>
+        {observation ? <Text style={s.clItemObs}>{observation}</Text> : null}
+      </View>
+      <Text style={[s.clStatus, { color: statusColor }]}>{statusText}</Text>
+    </View>
   );
 }
