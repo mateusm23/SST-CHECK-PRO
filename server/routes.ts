@@ -6,9 +6,9 @@ import { z } from "zod";
 import { isAuthenticated } from "./auth";
 import { generateActionPlans } from "./geminiService";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
-import { subscriptionPlans } from "@shared/schema";
+import { subscriptionPlans, customTemplates, templateSections, templateItems } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // VIP emails with full unlimited access (configure via VIP_EMAILS env var, comma-separated)
 const VIP_EMAILS = (process.env.VIP_EMAILS || "")
@@ -475,6 +475,173 @@ export async function registerRoutes(
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
     }
   });
+
+  // ── Templates customizados ─────────────────────────────────────
+
+  // Listar templates do usuário
+  app.get("/api/templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const templates = await db
+        .select()
+        .from(customTemplates)
+        .where(eq(customTemplates.userId, userId))
+        .orderBy(customTemplates.createdAt);
+      // Contar itens de cada template
+      const result = await Promise.all(
+        templates.map(async (t) => {
+          const sections = await db
+            .select()
+            .from(templateSections)
+            .where(eq(templateSections.templateId, t.id));
+          const itemCount = await Promise.all(
+            sections.map((s) =>
+              db.select().from(templateItems).where(eq(templateItems.sectionId, s.id))
+            )
+          );
+          return { ...t, sectionCount: sections.length, itemCount: itemCount.flat().length };
+        })
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar templates" });
+    }
+  });
+
+  // Buscar template completo (com seções e itens)
+  app.get("/api/templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const templateId = Number(req.params.id);
+      const [template] = await db
+        .select()
+        .from(customTemplates)
+        .where(and(eq(customTemplates.id, templateId), eq(customTemplates.userId, userId)));
+      if (!template) return res.status(404).json({ message: "Template não encontrado" });
+
+      const sections = await db
+        .select()
+        .from(templateSections)
+        .where(eq(templateSections.templateId, templateId))
+        .orderBy(templateSections.order);
+
+      const sectionsWithItems = await Promise.all(
+        sections.map(async (s) => {
+          const items = await db
+            .select()
+            .from(templateItems)
+            .where(eq(templateItems.sectionId, s.id))
+            .orderBy(templateItems.order);
+          return { ...s, items };
+        })
+      );
+
+      res.json({ ...template, sections: sectionsWithItems });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar template" });
+    }
+  });
+
+  // Criar template
+  app.post("/api/templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { name, description } = req.body;
+      const [template] = await db
+        .insert(customTemplates)
+        .values({ userId, name, description })
+        .returning();
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao criar template" });
+    }
+  });
+
+  // Salvar template completo (upsert seções + itens)
+  app.put("/api/templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const templateId = Number(req.params.id);
+      const { name, description, sections } = req.body;
+
+      const [template] = await db
+        .select()
+        .from(customTemplates)
+        .where(and(eq(customTemplates.id, templateId), eq(customTemplates.userId, userId)));
+      if (!template) return res.status(404).json({ message: "Template não encontrado" });
+
+      // Atualiza metadados
+      await db
+        .update(customTemplates)
+        .set({ name, description, updatedAt: new Date() })
+        .where(eq(customTemplates.id, templateId));
+
+      // Remove seções/itens antigos e recria (replace strategy)
+      const oldSections = await db
+        .select()
+        .from(templateSections)
+        .where(eq(templateSections.templateId, templateId));
+      for (const s of oldSections) {
+        await db.delete(templateItems).where(eq(templateItems.sectionId, s.id));
+      }
+      await db.delete(templateSections).where(eq(templateSections.templateId, templateId));
+
+      // Insere novas seções e itens
+      for (let si = 0; si < (sections || []).length; si++) {
+        const sec = sections[si];
+        const [newSection] = await db
+          .insert(templateSections)
+          .values({ templateId, name: sec.name, order: si })
+          .returning();
+        for (let ii = 0; ii < (sec.items || []).length; ii++) {
+          const item = sec.items[ii];
+          await db.insert(templateItems).values({
+            sectionId: newSection.id,
+            text: item.text,
+            responseType: item.responseType || "conformity",
+            weight: item.weight ?? 1,
+            obsRequired: item.obsRequired || "if_nc",
+            photoRequired: item.photoRequired || "never",
+            order: ii,
+          });
+        }
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erro ao salvar template" });
+    }
+  });
+
+  // Deletar template
+  app.delete("/api/templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const templateId = Number(req.params.id);
+      const [template] = await db
+        .select()
+        .from(customTemplates)
+        .where(and(eq(customTemplates.id, templateId), eq(customTemplates.userId, userId)));
+      if (!template) return res.status(404).json({ message: "Template não encontrado" });
+
+      const sections = await db
+        .select()
+        .from(templateSections)
+        .where(eq(templateSections.templateId, templateId));
+      for (const s of sections) {
+        await db.delete(templateItems).where(eq(templateItems.sectionId, s.id));
+      }
+      await db.delete(templateSections).where(eq(templateSections.templateId, templateId));
+      await db.delete(customTemplates).where(eq(customTemplates.id, templateId));
+
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao deletar template" });
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────
 
   app.get("/api/stripe/publishable-key", async (req, res) => {
     try {

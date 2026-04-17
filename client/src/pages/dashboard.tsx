@@ -5,12 +5,10 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Check,
   Plus,
   FileText,
   TrendingUp,
   Edit3,
-  LogOut,
   Crown,
   ChevronRight,
   AlertTriangle,
@@ -22,7 +20,7 @@ import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
-  const { user, logout, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -176,7 +174,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
+    <>
       {/* Limit Modal */}
       {showLimitModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -237,42 +235,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#1a1d23] text-white">
-        <div className="max-w-[600px] mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#FFD100] rounded-lg flex items-center justify-center">
-              <Check className="w-5 h-5 text-[#1a1d23] stroke-[3]" />
-            </div>
-            <span className="font-bold text-lg">
-              SST<span className="text-[#FFD100]">Check</span>Pro
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/pricing">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-white hover:bg-white/10"
-                data-testid="button-pricing"
-              >
-                <Crown className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-white hover:bg-white/10"
-              onClick={() => logout()} 
-              data-testid="button-logout"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-[600px] mx-auto px-4 py-6">
+      <main className="max-w-[640px] mx-auto px-4 py-6">
         {/* Welcome */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -473,6 +436,6 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
-    </div>
+    </>
   );
 }

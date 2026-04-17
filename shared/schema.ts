@@ -85,6 +85,67 @@ export const nrChecklists = pgTable("nr_checklists", {
   items: jsonb("items").notNull(),
 });
 
+// ── Templates customizados ────────────────────────────────────────
+
+export const customTemplates = pgTable("custom_templates", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const templateSections = pgTable("template_sections", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => customTemplates.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  order: integer("order").notNull().default(0),
+});
+
+export const templateItems = pgTable("template_items", {
+  id: serial("id").primaryKey(),
+  sectionId: integer("section_id").notNull().references(() => templateSections.id, { onDelete: "cascade" }),
+  text: text("text").notNull(),
+  responseType: text("response_type").notNull().default("conformity"), // conformity | boolean | text
+  weight: integer("weight").notNull().default(1),
+  obsRequired: text("obs_required").notNull().default("if_nc"),   // always | if_nc | never
+  photoRequired: text("photo_required").notNull().default("never"), // always | if_nc | never
+  order: integer("order").notNull().default(0),
+});
+
+export const customTemplatesRelations = relations(customTemplates, ({ many }) => ({
+  sections: many(templateSections),
+}));
+
+export const templateSectionsRelations = relations(templateSections, ({ one, many }) => ({
+  template: one(customTemplates, {
+    fields: [templateSections.templateId],
+    references: [customTemplates.id],
+  }),
+  items: many(templateItems),
+}));
+
+export const templateItemsRelations = relations(templateItems, ({ one }) => ({
+  section: one(templateSections, {
+    fields: [templateItems.sectionId],
+    references: [templateSections.id],
+  }),
+}));
+
+export const insertCustomTemplateSchema = createInsertSchema(customTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTemplateSectionSchema = createInsertSchema(templateSections).omit({ id: true });
+export const insertTemplateItemSchema = createInsertSchema(templateItems).omit({ id: true });
+
+export type CustomTemplate = typeof customTemplates.$inferSelect;
+export type InsertCustomTemplate = z.infer<typeof insertCustomTemplateSchema>;
+export type TemplateSection = typeof templateSections.$inferSelect;
+export type InsertTemplateSection = z.infer<typeof insertTemplateSectionSchema>;
+export type TemplateItem = typeof templateItems.$inferSelect;
+export type InsertTemplateItem = z.infer<typeof insertTemplateItemSchema>;
+
+// ─────────────────────────────────────────────────────────────────
+
 export const inspectionsRelations = relations(inspections, ({ one, many }) => ({
   company: one(companies, {
     fields: [inspections.companyId],
