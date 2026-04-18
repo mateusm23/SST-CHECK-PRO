@@ -397,7 +397,7 @@ export default function InspectionViewPage() {
             {inspData?.observations && (
               <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#f9fafb", borderRadius: "8px", borderLeft: "3px solid #FFD100" }}>
                 <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>Observações Gerais</div>
-                <div style={{ fontSize: "13px", color: "#374151" }}>{inspData.observations}</div>
+                <div style={{ fontSize: "13px", color: "#374151", wordBreak: "break-word", overflowWrap: "break-word" }}>{inspData.observations}</div>
               </div>
             )}
           </div>
@@ -434,7 +434,7 @@ export default function InspectionViewPage() {
                       <span style={{ color: "white", fontSize: "11px", fontWeight: "bold" }}>{idx + 1}</span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: "600", color: "#111", lineHeight: "1.4", marginBottom: "3px" }}>{item.text}</div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "#111", lineHeight: "1.4", marginBottom: "3px", wordBreak: "break-word", overflowWrap: "break-word" }}>{item.text}</div>
                       <div style={{ fontSize: "11px", color: "#6b7280" }}>{nrNumber} — {nrName}</div>
                     </div>
                   </div>
@@ -443,7 +443,7 @@ export default function InspectionViewPage() {
                   {data.observation && (
                     <div style={{ margin: "0 16px 10px", fontSize: "12px", color: "#374151", fontStyle: "italic", padding: "8px 12px", backgroundColor: "#f9fafb", borderRadius: "4px", borderLeft: "3px solid #d1d5db" }}>
                       <span style={{ fontWeight: "600", fontStyle: "normal", color: "#6b7280", fontSize: "10px", display: "block", marginBottom: "2px" }}>OBSERVAÇÃO</span>
-                      {data.observation}
+                      <span style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>{data.observation}</span>
                     </div>
                   )}
 

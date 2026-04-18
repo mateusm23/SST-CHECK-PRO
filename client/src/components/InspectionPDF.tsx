@@ -84,12 +84,39 @@ const C = {
 
 // ── Styles ──
 const s = StyleSheet.create({
-  // Page — paddingBottom reserva espaço pro rodapé fixo
+  // Page — paddingTop reserva espaço pro mini-cabeçalho nas págs 2+
   page: {
     backgroundColor: C.white,
     fontFamily: 'Helvetica',
     fontSize: 10,
+    paddingTop: 28,
     paddingBottom: 36,
+  },
+
+  // ── Mini-cabeçalho (páginas 2+) ──
+  miniHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 28,
+    backgroundColor: '#f8fafc',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    borderBottomStyle: 'solid',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+  },
+  miniHeaderBrand: {
+    fontSize: 7,
+    color: '#9ca3af',
+  },
+  miniHeaderInspection: {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    color: '#374151',
   },
 
   // ── Header ──
@@ -106,16 +133,16 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   logoBox: {
-    width: 40,
-    height: 40,
+    width: 52,
+    height: 52,
     backgroundColor: C.yellow,
-    borderRadius: 6,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   logoCheck: {
-    fontSize: 22,
+    fontSize: 30,
     fontFamily: 'Helvetica-Bold',
     color: C.dark,
   },
@@ -446,7 +473,7 @@ const s = StyleSheet.create({
   clTitle: {
     fontSize: 12,
     fontFamily: 'Helvetica-Bold',
-    color: C.text,
+    color: '#374151',
     marginBottom: 12,
   },
   nrGroup: {
@@ -570,7 +597,7 @@ const s = StyleSheet.create({
   sigBrand: {
     fontSize: 9,
     fontFamily: 'Helvetica-Bold',
-    color: C.dark,
+    color: '#374151',
   },
   sigUrl: {
     fontSize: 8,
@@ -584,20 +611,23 @@ const s = StyleSheet.create({
     left: 0,
     right: 0,
     height: 28,
-    backgroundColor: C.dark,
+    backgroundColor: '#f8fafc',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    borderTopStyle: 'solid',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 28,
   },
   pageFooterBrand: {
-    fontSize: 8,
-    color: 'rgba(255,255,255,0.5)',
+    fontSize: 7,
+    color: '#9ca3af',
   },
   pageFooterPage: {
-    fontSize: 8,
-    color: C.yellow,
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
+    color: '#374151',
   },
 });
 
@@ -624,6 +654,22 @@ export default function InspectionPDFDocument({
       creator="SST Check Pro"
     >
       <Page size="A4" style={s.page}>
+
+        {/* ── Mini-cabeçalho fixo nas páginas 2+ ── */}
+        <View
+          fixed
+          style={s.miniHeader}
+          render={({ pageNumber }) =>
+            pageNumber > 1 ? (
+              <>
+                <Text style={s.miniHeaderBrand}>SST Check Pro — sstcheckpro.com.br</Text>
+                <Text style={s.miniHeaderInspection}>
+                  Inspeção #{idStr}{inspData?.title ? ` · ${inspData.title}` : ''}
+                </Text>
+              </>
+            ) : null
+          }
+        />
 
         {/* ── Header ── */}
         <View style={s.header}>
