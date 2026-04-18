@@ -6,6 +6,8 @@ import {
   Text,
   Image,
   StyleSheet,
+  Svg,
+  Path,
 } from '@react-pdf/renderer';
 
 // ── Types ──
@@ -681,7 +683,16 @@ export default function InspectionPDFDocument({
             ) : (
               <>
                 <View style={s.logoBox}>
-                  <Text style={s.logoCheck}>V</Text>
+                  <Svg width={28} height={28} viewBox="0 0 24 24">
+                    <Path
+                      d="M4 13 L9 18 L20 7"
+                      stroke="#1a1d23"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                  </Svg>
                 </View>
                 <View style={s.brandBlock}>
                   {/* SST em branco, Check em amarelo, Pro em branco */}
