@@ -36,6 +36,18 @@ interface NonConformity {
   data: ItemResponse;
 }
 
+interface TemplatePDFItem {
+  id: number;
+  text: string;
+  responseType: string;
+}
+
+interface TemplatePDFSection {
+  id: number;
+  name: string;
+  items: TemplatePDFItem[];
+}
+
 export interface InspectionPDFProps {
   inspectionId: number;
   inspData: any;
@@ -48,6 +60,8 @@ export interface InspectionPDFProps {
   naCount: number;
   totalAnswered: number;
   conformityScore: number;
+  templateSections?: TemplatePDFSection[];
+  templateName?: string;
 }
 
 // ── Helpers ──
@@ -641,7 +655,10 @@ export default function InspectionPDFDocument({
   naCount,
   totalAnswered,
   conformityScore,
+  templateSections,
+  templateName,
 }: InspectionPDFProps) {
+  const isTemplate = !!(templateSections && templateSections.length > 0);
   const idStr = inspectionId.toString().padStart(4, '0');
 
   return (
@@ -715,14 +732,25 @@ export default function InspectionPDFDocument({
           </View>
         </View>
 
-        {/* ── NRs Bar ── */}
+        {/* ── NRs Bar / Template ── */}
         <View style={s.nrBar}>
-          <Text style={s.nrBarLabel}>NRS INSPECIONADAS:</Text>
-          {selectedNRs.map((nr) => (
-            <View key={nr.id} style={s.nrTag}>
-              <Text style={s.nrTagText}>{nr.nrNumber}</Text>
-            </View>
-          ))}
+          {isTemplate ? (
+            <>
+              <Text style={s.nrBarLabel}>TEMPLATE:</Text>
+              <View style={s.nrTag}>
+                <Text style={s.nrTagText}>{templateName || 'Template'}</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={s.nrBarLabel}>NRS INSPECIONADAS:</Text>
+              {selectedNRs.map((nr) => (
+                <View key={nr.id} style={s.nrTag}>
+                  <Text style={s.nrTagText}>{nr.nrNumber}</Text>
+                </View>
+              ))}
+            </>
+          )}
         </View>
 
         {/* ── Info Section ── */}
@@ -822,7 +850,7 @@ export default function InspectionPDFDocument({
                   </View>
                   <View style={s.ncCardBody}>
                     <Text style={s.ncCardTitle}>{item.text}</Text>
-                    <Text style={s.ncCardNR}>{nrNumber} | {nrName}</Text>
+                    <Text style={s.ncCardNR}>{nrName ? `${nrNumber} | ${nrName}` : nrNumber}</Text>
                   </View>
                 </View>
 
@@ -890,46 +918,58 @@ export default function InspectionPDFDocument({
         <View style={s.clSection}>
           <Text style={s.clTitle}>CHECKLIST COMPLETO</Text>
 
-          {selectedNRs.map((nr) => (
+          {/* NR-based checklist */}
+          {!isTemplate && selectedNRs.map((nr) => (
             <View key={nr.id} style={s.nrGroup}>
-              {/* Header + primeiro item juntos para evitar header órfão */}
               <View wrap={false}>
                 <View style={s.nrGroupHead}>
                   <View style={s.nrAccent} />
-                  <Text style={s.nrGroupName}>
-                    {nr.nrNumber} | {nr.nrName}
-                  </Text>
+                  <Text style={s.nrGroupName}>{nr.nrNumber} | {nr.nrName}</Text>
                 </View>
                 <View style={s.nrItemsBorder}>
                   {nr.items.slice(0, 1).map((item, idx) => {
                     const r = responses[item.id];
-                    const status = r?.response;
                     return (
-                      <ChecklistItem
-                        key={item.id}
-                        item={item}
-                        idx={idx}
-                        status={status}
-                        observation={r?.observation}
-                      />
+                      <ChecklistItem key={item.id} item={item} idx={idx} status={r?.response} observation={r?.observation} responseType="conformity" />
                     );
                   })}
                 </View>
               </View>
-
-              {/* Demais itens */}
               <View style={s.nrItemsBorder}>
                 {nr.items.slice(1).map((item, idx) => {
                   const r = responses[item.id];
-                  const status = r?.response;
                   return (
-                    <ChecklistItem
-                      key={item.id}
-                      item={item}
-                      idx={idx + 1}
-                      status={status}
-                      observation={r?.observation}
-                    />
+                    <ChecklistItem key={item.id} item={item} idx={idx + 1} status={r?.response} observation={r?.observation} responseType="conformity" />
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+
+          {/* Template-based checklist */}
+          {isTemplate && templateSections!.map((section) => (
+            <View key={section.id} style={s.nrGroup}>
+              <View wrap={false}>
+                <View style={s.nrGroupHead}>
+                  <View style={s.nrAccent} />
+                  <Text style={s.nrGroupName}>{section.name}</Text>
+                </View>
+                <View style={s.nrItemsBorder}>
+                  {section.items.slice(0, 1).map((item, idx) => {
+                    const key = String(item.id);
+                    const r = responses[key];
+                    return (
+                      <ChecklistItem key={item.id} item={{ id: key, text: item.text }} idx={idx} status={r?.response} observation={r?.observation} responseType={item.responseType} />
+                    );
+                  })}
+                </View>
+              </View>
+              <View style={s.nrItemsBorder}>
+                {section.items.slice(1).map((item, idx) => {
+                  const key = String(item.id);
+                  const r = responses[key];
+                  return (
+                    <ChecklistItem key={item.id} item={{ id: key, text: item.text }} idx={idx + 1} status={r?.response} observation={r?.observation} responseType={item.responseType} />
                   );
                 })}
               </View>
@@ -973,26 +1013,32 @@ function ChecklistItem({
   idx,
   status,
   observation,
+  responseType = 'conformity',
 }: {
   item: { id: string; text: string };
   idx: number;
   status: 'ok' | 'nc' | 'na' | null | undefined;
   observation?: string;
+  responseType?: string;
 }) {
-  const dotColor =
-    status === 'ok'
-      ? C.green
-      : status === 'nc'
-      ? C.red
-      : status === 'na'
-      ? C.gray
-      : '#e5e7eb';
-  const dotSymbol =
-    status === 'ok' ? 'C' : status === 'nc' ? 'X' : status === 'na' ? '-' : '';
-  const statusText =
-    status === 'ok' ? 'CONF' : status === 'nc' ? 'NC' : status === 'na' ? 'N/A' : '-';
-  const statusColor =
-    status === 'ok' ? C.green : status === 'nc' ? C.red : C.muted;
+  const isText = responseType === 'text';
+  const isBool = responseType === 'boolean';
+  const dotColor = isText
+    ? '#6366f1'
+    : status === 'ok'
+    ? C.green
+    : status === 'nc'
+    ? C.red
+    : status === 'na'
+    ? C.gray
+    : '#e5e7eb';
+  const dotSymbol = isText ? 'T' : status === 'ok' ? 'C' : status === 'nc' ? 'X' : status === 'na' ? '-' : '';
+  const statusText = isText
+    ? 'TEXTO'
+    : isBool
+    ? status === 'ok' ? 'SIM' : status === 'nc' ? 'NAO' : '-'
+    : status === 'ok' ? 'CONF' : status === 'nc' ? 'NC' : status === 'na' ? 'N/A' : '-';
+  const statusColor = isText ? '#6366f1' : status === 'ok' ? C.green : status === 'nc' ? C.red : C.muted;
 
   return (
     <View style={idx % 2 === 0 ? s.clItemEven : s.clItemOdd} wrap={false}>

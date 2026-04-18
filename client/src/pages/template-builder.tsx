@@ -139,14 +139,25 @@ function SortableItem({
           {/* Peso */}
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-gray-400 font-medium uppercase">Peso</span>
-            <input
-              type="number"
-              min={1}
-              max={10}
-              value={item.weight}
-              onChange={(e) => onUpdate(item.id, { weight: Math.max(1, Number(e.target.value)) })}
-              className="w-14 text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 text-center focus:outline-none focus:border-[#FFD100]"
-            />
+            <div className="flex items-center border border-gray-200 rounded overflow-hidden">
+              <button
+                type="button"
+                onClick={() => onUpdate(item.id, { weight: Math.max(1, item.weight - 1) })}
+                className="px-2 py-1 text-gray-500 hover:bg-gray-100 active:bg-gray-200 text-sm leading-none select-none"
+              >
+                −
+              </button>
+              <span className="px-2 py-1 text-xs text-gray-700 min-w-[1.5rem] text-center bg-white">
+                {item.weight}
+              </span>
+              <button
+                type="button"
+                onClick={() => onUpdate(item.id, { weight: Math.min(10, item.weight + 1) })}
+                className="px-2 py-1 text-gray-500 hover:bg-gray-100 active:bg-gray-200 text-sm leading-none select-none"
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* Obs obrigatória */}
@@ -375,14 +386,20 @@ export default function TemplateBuilderPage() {
     queryKey: ["/api/nr-checklists"],
   });
 
-  const { isLoading: loadingTemplate } = useQuery({
+  const [initialized, setInitialized] = useState(false);
+
+  const { data: templateData, isLoading: loadingTemplate } = useQuery({
     queryKey: ["/api/templates", templateId],
     enabled: !!templateId,
     queryFn: async () => {
       const res = await fetch(`/api/templates/${templateId}`, { credentials: "include" });
       return res.json();
     },
-    onSuccess: (data: any) => {
+  });
+
+  useEffect(() => {
+    if (templateData && !initialized) {
+      const data = templateData as any;
       setName(data.name || "");
       setDescription(data.description || "");
       setSections(
@@ -400,8 +417,9 @@ export default function TemplateBuilderPage() {
           })),
         }))
       );
-    },
-  } as any);
+      setInitialized(true);
+    }
+  }, [templateData, initialized]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -423,6 +441,9 @@ export default function TemplateBuilderPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
+      if (templateId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/templates", templateId] });
+      }
       setIsDirty(false);
       toast({ title: "Template salvo!" });
     },

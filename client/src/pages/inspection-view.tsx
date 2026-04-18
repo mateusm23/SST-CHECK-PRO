@@ -42,9 +42,25 @@ interface NRChecklist {
 }
 
 interface ChecklistData {
-  selectedNRIds: number[];
+  selectedNRIds?: number[];
+  templateId?: number;
   responses: Record<string, ItemResponse>;
   companyLogo?: string;
+}
+
+interface TemplateItemData {
+  id: number;
+  text: string;
+  responseType: string;
+  weight: number;
+  obsRequired: string;
+  photoRequired: string;
+}
+
+interface TemplateSectionData {
+  id: number;
+  name: string;
+  items: TemplateItemData[];
 }
 
 export default function InspectionViewPage() {
@@ -64,6 +80,25 @@ export default function InspectionViewPage() {
     queryKey: ["/api/nr-checklists"],
   });
 
+  const inspData = inspection as any;
+  const rawChecklist = inspData?.checklistData as ChecklistData | undefined;
+  const responses: Record<string, ItemResponse> = rawChecklist?.responses || {};
+  const selectedNRIds: number[] = rawChecklist?.selectedNRIds || [];
+  const templateId: number | undefined = rawChecklist?.templateId;
+  const companyLogo: string | undefined = rawChecklist?.companyLogo;
+
+  const { data: templateData } = useQuery({
+    queryKey: ["/api/templates", templateId],
+    enabled: !!templateId,
+    queryFn: async () => {
+      const res = await fetch(`/api/templates/${templateId}`, { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const templateSections: TemplateSectionData[] = (templateData as any)?.sections || [];
+  const templateName: string = (templateData as any)?.name || "Template";
+
   const deleteInspectionMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("DELETE", `/api/inspections/${inspectionId}`, {});
@@ -76,24 +111,30 @@ export default function InspectionViewPage() {
     },
   });
 
-  const inspData = inspection as any;
-  const rawChecklist = inspData?.checklistData as ChecklistData | undefined;
-  const responses: Record<string, ItemResponse> = rawChecklist?.responses || {};
-  const selectedNRIds: number[] = rawChecklist?.selectedNRIds || [];
-  const companyLogo: string | undefined = rawChecklist?.companyLogo;
-
   const selectedNRs = nrChecklists.filter((nr) => selectedNRIds.includes(nr.id));
 
   // Todas as NCs com dados completos
   const nonConformities: { nrNumber: string; nrName: string; item: { id: string; text: string }; data: ItemResponse }[] = [];
-  selectedNRs.forEach((nr) => {
-    nr.items.forEach((item) => {
-      const r = responses[item.id];
-      if (r?.response === "nc") {
-        nonConformities.push({ nrNumber: nr.nrNumber, nrName: nr.nrName, item, data: r });
-      }
+  if (templateId) {
+    templateSections.forEach((section) => {
+      section.items.forEach((item) => {
+        const key = String(item.id);
+        const r = responses[key];
+        if (r?.response === "nc") {
+          nonConformities.push({ nrNumber: section.name, nrName: "", item: { id: key, text: item.text }, data: r });
+        }
+      });
     });
-  });
+  } else {
+    selectedNRs.forEach((nr) => {
+      nr.items.forEach((item) => {
+        const r = responses[item.id];
+        if (r?.response === "nc") {
+          nonConformities.push({ nrNumber: nr.nrNumber, nrName: nr.nrName, item, data: r });
+        }
+      });
+    });
+  }
 
   // Stats
   let okCount = 0, ncCount = 0, naCount = 0;
@@ -139,7 +180,7 @@ export default function InspectionViewPage() {
       ["Endereço", inspData?.location || "-"],
       ["Inspetor", inspData?.inspectorName || "-"],
       ["Data da Inspeção", formatDate(inspData?.completedAt || inspData?.createdAt)],
-      ["NRs Inspecionadas", selectedNRs.map((n) => n.nrNumber).join(", ")],
+      ["NRs / Template", templateId ? templateName : selectedNRs.map((n) => n.nrNumber).join(", ")],
       [],
       ["RESULTADO GERAL"],
       ["Total de Itens Respondidos", totalAnswered],
@@ -156,18 +197,34 @@ export default function InspectionViewPage() {
     const checklistRows: any[][] = [
       ["NR", "Item", "Descrição", "Resposta", "Observação"],
     ];
-    selectedNRs.forEach((nr) => {
-      nr.items.forEach((item, idx) => {
-        const r = responses[item.id];
-        checklistRows.push([
-          nr.nrNumber,
-          idx + 1,
-          item.text,
-          responseLabel(r?.response || null),
-          r?.observation || "",
-        ]);
+    if (templateId) {
+      templateSections.forEach((section) => {
+        section.items.forEach((item, idx) => {
+          const key = String(item.id);
+          const r = responses[key];
+          checklistRows.push([
+            section.name,
+            idx + 1,
+            item.text,
+            responseLabel(r?.response || null),
+            r?.observation || "",
+          ]);
+        });
       });
-    });
+    } else {
+      selectedNRs.forEach((nr) => {
+        nr.items.forEach((item, idx) => {
+          const r = responses[item.id];
+          checklistRows.push([
+            nr.nrNumber,
+            idx + 1,
+            item.text,
+            responseLabel(r?.response || null),
+            r?.observation || "",
+          ]);
+        });
+      });
+    }
     const wsChecklist = XLSX.utils.aoa_to_sheet(checklistRows);
     wsChecklist["!cols"] = [{ wch: 10 }, { wch: 6 }, { wch: 70 }, { wch: 18 }, { wch: 40 }];
     XLSX.utils.book_append_sheet(wb, wsChecklist, "Checklist Completo");
@@ -215,6 +272,8 @@ export default function InspectionViewPage() {
           naCount={naCount}
           totalAnswered={totalAnswered}
           conformityScore={conformityScore}
+          templateSections={templateId ? templateSections : undefined}
+          templateName={templateId ? templateName : undefined}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -365,13 +424,22 @@ export default function InspectionViewPage() {
             </div>
           </div>
 
-          {/* NRs inspecionadas */}
+          {/* NRs inspecionadas / Template */}
           <div style={{ backgroundColor: "#FFD100", padding: "10px 32px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
-            <span style={{ fontSize: "11px", fontWeight: "bold", color: "#1a1d23", textTransform: "uppercase", letterSpacing: "1px", marginRight: "8px" }}>NRs Inspecionadas:</span>
-            {selectedNRs.map((nr) => (
-              <span key={nr.id} style={{ backgroundColor: "#1a1d23", color: "#FFD100", padding: "2px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "bold" }}>{nr.nrNumber}</span>
-            ))}
-            {selectedNRs.length === 0 && <span style={{ fontSize: "11px", color: "#1a1d23" }}>—</span>}
+            {templateId ? (
+              <>
+                <span style={{ fontSize: "11px", fontWeight: "bold", color: "#1a1d23", textTransform: "uppercase", letterSpacing: "1px", marginRight: "8px" }}>Template:</span>
+                <span style={{ backgroundColor: "#1a1d23", color: "#FFD100", padding: "2px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "bold" }}>{templateName}</span>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: "11px", fontWeight: "bold", color: "#1a1d23", textTransform: "uppercase", letterSpacing: "1px", marginRight: "8px" }}>NRs Inspecionadas:</span>
+                {selectedNRs.map((nr) => (
+                  <span key={nr.id} style={{ backgroundColor: "#1a1d23", color: "#FFD100", padding: "2px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "bold" }}>{nr.nrNumber}</span>
+                ))}
+                {selectedNRs.length === 0 && <span style={{ fontSize: "11px", color: "#1a1d23" }}>-</span>}
+              </>
+            )}
           </div>
 
           {/* Dados da inspeção */}
@@ -493,14 +561,16 @@ export default function InspectionViewPage() {
             </div>
           )}
 
-          {/* Checklist Completo por NR */}
+          {/* Checklist Completo */}
           <div style={{ padding: "24px 32px" }}>
             <div style={{ fontSize: "14px", fontWeight: "bold", color: "#111", marginBottom: "16px" }}>CHECKLIST COMPLETO</div>
-            {selectedNRs.map((nr) => (
+
+            {/* NR-based checklist */}
+            {!templateId && selectedNRs.map((nr) => (
               <div key={nr.id} style={{ marginBottom: "20px" }}>
-                <div style={{ backgroundColor: "#1a1d23", color: "white", padding: "10px 16px", fontSize: "12px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ backgroundColor: "#374151", color: "white", padding: "10px 16px", fontSize: "12px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
                   <div style={{ width: "4px", height: "16px", backgroundColor: "#FFD100", borderRadius: "2px" }} />
-                  {nr.nrNumber} — {nr.nrName}
+                  {nr.nrNumber} | {nr.nrName}
                 </div>
                 <div style={{ border: "1px solid #e5e7eb", borderTop: "none" }}>
                   {nr.items.map((item, itemIndex) => {
@@ -527,6 +597,46 @@ export default function InspectionViewPage() {
                 </div>
               </div>
             ))}
+
+            {/* Template-based checklist */}
+            {templateId && templateSections.map((section) => (
+              <div key={section.id} style={{ marginBottom: "20px" }}>
+                <div style={{ backgroundColor: "#374151", color: "white", padding: "10px 16px", fontSize: "12px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ width: "4px", height: "16px", backgroundColor: "#FFD100", borderRadius: "2px" }} />
+                  {section.name}
+                </div>
+                <div style={{ border: "1px solid #e5e7eb", borderTop: "none" }}>
+                  {section.items.map((item, itemIndex) => {
+                    const key = String(item.id);
+                    const itemResponse = responses[key];
+                    const status = itemResponse?.response;
+                    const isText = item.responseType === "text";
+                    return (
+                      <div key={item.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "9px 16px", borderBottom: itemIndex < section.items.length - 1 ? "1px solid #f3f4f6" : "none", backgroundColor: itemIndex % 2 === 0 ? "#ffffff" : "#fafafa" }}>
+                        <div style={{ width: "22px", height: "22px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: isText ? "#6366f1" : status === "ok" ? "#16a34a" : status === "nc" ? "#dc2626" : status === "na" ? "#9ca3af" : "#e5e7eb", flexShrink: 0 }}>
+                          {isText && <FileText style={{ width: "11px", height: "11px", color: "white" }} />}
+                          {!isText && status === "ok" && <Check style={{ width: "13px", height: "13px", color: "white", strokeWidth: 3 }} />}
+                          {!isText && status === "nc" && <X style={{ width: "13px", height: "13px", color: "white", strokeWidth: 3 }} />}
+                          {!isText && status === "na" && <Minus style={{ width: "13px", height: "13px", color: "white", strokeWidth: 3 }} />}
+                          {!isText && !status && <span style={{ color: "#9ca3af", fontSize: "9px" }}>?</span>}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "11px", color: "#374151" }}>{itemIndex + 1}. {item.text}</div>
+                          {itemResponse?.observation && <div style={{ fontSize: "10px", color: "#6b7280", fontStyle: "italic", marginTop: "2px" }}>{itemResponse.observation}</div>}
+                        </div>
+                        <div style={{ fontSize: "10px", fontWeight: "600", color: isText ? "#6366f1" : status === "ok" ? "#16a34a" : status === "nc" ? "#dc2626" : status === "na" ? "#6b7280" : "#9ca3af", width: "36px", textAlign: "right" }}>
+                          {isText ? "TEXTO" : status === "ok" ? "CONF" : status === "nc" ? "NC" : status === "na" ? "N/A" : "-"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {templateId && templateSections.length === 0 && (
+              <div style={{ textAlign: "center", padding: "24px", color: "#9ca3af", fontSize: "12px" }}>Carregando template...</div>
+            )}
           </div>
 
           {/* Rodapé */}

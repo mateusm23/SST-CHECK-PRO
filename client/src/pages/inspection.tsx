@@ -46,9 +46,25 @@ interface NRChecklist {
 }
 
 interface ChecklistData {
-  selectedNRIds: number[];
+  selectedNRIds?: number[];
+  templateId?: number;
   responses: Record<string, ItemResponse>;
   companyLogo?: string;
+}
+
+interface TemplateItemData {
+  id: number;
+  text: string;
+  responseType: string;
+  weight: number;
+  obsRequired: string;
+  photoRequired: string;
+}
+
+interface TemplateSectionData {
+  id: number;
+  name: string;
+  items: TemplateItemData[];
 }
 
 export default function InspectionPage() {
@@ -67,9 +83,10 @@ export default function InspectionPage() {
   const [selectedNRIds, setSelectedNRIds] = useState<number[]>([]);
   const [responses, setResponses] = useState<Record<string, ItemResponse>>({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<Record<number, boolean>>({});
+  const [collapsedSections, setCollapsedSections] = useState<Record<number | string, boolean>>({});
   const [step, setStep] = useState<"select-nr" | "checklist">("select-nr");
   const [companyLogo, setCompanyLogo] = useState<string>("");
+  const [activeTemplateId, setActiveTemplateId] = useState<number | null>(null);
 
   const { data: inspection, isLoading } = useQuery({
     queryKey: ["/api/inspections", inspectionId],
@@ -87,6 +104,17 @@ export default function InspectionPage() {
   });
   const canUploadLogo = subscription?.plan?.canUploadLogo ?? false;
 
+  const { data: templateData } = useQuery({
+    queryKey: ["/api/templates", activeTemplateId],
+    enabled: !!activeTemplateId,
+    queryFn: async () => {
+      const res = await fetch(`/api/templates/${activeTemplateId}`, { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const templateSections: TemplateSectionData[] = (templateData as any)?.sections || [];
+
   const selectedNRs = useMemo(
     () => nrChecklists.filter((nr) => selectedNRIds.includes(nr.id)),
     [nrChecklists, selectedNRIds]
@@ -102,18 +130,36 @@ export default function InspectionPage() {
     return items;
   }, [selectedNRs]);
 
-  const totalItems = allItems.length;
+  const allTemplateItems = useMemo(() => {
+    if (!activeTemplateId) return [];
+    return templateSections.flatMap((s) =>
+      s.items.map((item) => ({
+        itemId: String(item.id),
+        text: item.text,
+        responseType: item.responseType || "conformity",
+      }))
+    );
+  }, [templateSections, activeTemplateId]);
+
+  const effectiveItems = activeTemplateId ? allTemplateItems : allItems;
+  const totalItems = effectiveItems.length;
 
   const stats = useMemo(() => {
-    let ok = 0, nc = 0, na = 0;
-    allItems.forEach(({ itemId }) => {
-      const r = responses[itemId]?.response;
-      if (r === "ok") ok++;
-      else if (r === "nc") nc++;
-      else if (r === "na") na++;
+    let ok = 0, nc = 0, na = 0, textAnswered = 0;
+    effectiveItems.forEach((it: any) => {
+      const { itemId, responseType } = it;
+      if (responseType === "text") {
+        if (responses[itemId]?.observation) textAnswered++;
+      } else {
+        const r = responses[itemId]?.response;
+        if (r === "ok") ok++;
+        else if (r === "nc") nc++;
+        else if (r === "na") na++;
+      }
     });
-    return { ok, nc, na, answered: ok + nc + na };
-  }, [responses, allItems]);
+    return { ok, nc, na, answered: ok + nc + na + textAnswered };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [responses, effectiveItems]);
 
   const progressPercent = totalItems > 0 ? (stats.answered / totalItems) * 100 : 0;
   const canFinish = totalItems > 0 && stats.answered === totalItems;
@@ -129,7 +175,12 @@ export default function InspectionPage() {
       });
       if (insp.checklistData) {
         const saved = insp.checklistData as ChecklistData;
-        if (saved.selectedNRIds && Array.isArray(saved.selectedNRIds)) {
+        if (saved.templateId) {
+          setActiveTemplateId(saved.templateId);
+          setResponses(saved.responses || {});
+          // If already has responses, go straight to checklist; otherwise stay on form step
+          if (Object.keys(saved.responses || {}).length > 0) setStep("checklist");
+        } else if (saved.selectedNRIds && Array.isArray(saved.selectedNRIds)) {
           setSelectedNRIds(saved.selectedNRIds);
           setResponses(saved.responses || {});
           if (saved.selectedNRIds.length > 0) setStep("checklist");
@@ -181,7 +232,7 @@ export default function InspectionPage() {
   });
 
   const buildChecklistData = (): ChecklistData => ({
-    selectedNRIds,
+    ...(activeTemplateId ? { templateId: activeTemplateId } : { selectedNRIds }),
     responses,
     companyLogo: companyLogo || undefined,
   });
@@ -191,7 +242,7 @@ export default function InspectionPage() {
   };
 
   const handleConfirmNRs = () => {
-    if (selectedNRIds.length === 0) {
+    if (!activeTemplateId && selectedNRIds.length === 0) {
       toast({ title: "Selecione ao menos uma NR", variant: "destructive" });
       return;
     }
@@ -279,12 +330,35 @@ export default function InspectionPage() {
   const handleMarkAllUnset = (value: ResponseType) => {
     setResponses((prev) => {
       const next = { ...prev };
-      allItems.forEach(({ itemId }) => {
+      effectiveItems.forEach((it: any) => {
+        const { itemId, responseType } = it;
+        if (responseType === "text") return;
         if (!prev[itemId]?.response) {
           next[itemId] = {
             response: value,
             observation: prev[itemId]?.observation || "",
             photos: prev[itemId]?.photos || [],
+            actionPlan: value === "nc" ? { responsible: "", deadline: "", priority: "" } : undefined,
+          };
+        }
+      });
+      return next;
+    });
+  };
+
+  const handleMarkSectionAll = (sectionId: number, value: ResponseType) => {
+    const section = templateSections.find((s) => s.id === sectionId);
+    if (!section) return;
+    setResponses((prev) => {
+      const next = { ...prev };
+      section.items.forEach((item) => {
+        if (item.responseType === "text") return;
+        const key = String(item.id);
+        if (!prev[key]?.response) {
+          next[key] = {
+            response: value,
+            observation: prev[key]?.observation || "",
+            photos: prev[key]?.photos || [],
             actionPlan: value === "nc" ? { responsible: "", deadline: "", priority: "" } : undefined,
           };
         }
@@ -357,7 +431,7 @@ export default function InspectionPage() {
               SST Check Pro
             </h1>
             <p className="text-xs opacity-70">
-              {step === "select-nr" ? "Selecionar NRs" : "Checklist"}
+              {step === "select-nr" ? (activeTemplateId ? "Dados da Inspeção" : "Selecionar NRs") : "Checklist"}
             </p>
           </div>
           <div className="flex gap-1">
@@ -452,57 +526,84 @@ export default function InspectionPage() {
               </div>
             </div>
 
-            {/* Seleção de NRs */}
-            <div className="bg-white rounded-xl p-5 mb-4 shadow-sm">
-              <h2 className="font-bold text-base mb-1 text-[#1a1d23]">Selecione as NRs a inspecionar</h2>
-              <p className="text-xs text-gray-400 mb-4">Escolha uma ou mais normas regulamentadoras</p>
+            {/* Template info OR NR selection */}
+            {activeTemplateId ? (
+              <div className="bg-white rounded-xl p-5 mb-4 shadow-sm">
+                <h2 className="font-bold text-base mb-1 text-[#1a1d23] flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-[#FFD100]" />
+                  Template Selecionado
+                </h2>
+                {templateData ? (
+                  <div className="mt-3 flex items-center gap-3 p-3 bg-[#1a1d23] rounded-xl">
+                    <div className="w-10 h-10 bg-[#FFD100]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <ClipboardList className="w-5 h-5 text-[#FFD100]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white text-sm">{(templateData as any).name}</p>
+                      <p className="text-xs text-gray-400">
+                        {templateSections.length} {templateSections.length === 1 ? "seção" : "seções"} ·{" "}
+                        {templateSections.reduce((acc: number, s: TemplateSectionData) => acc + s.items.length, 0)} itens
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl p-5 mb-4 shadow-sm">
+                <h2 className="font-bold text-base mb-1 text-[#1a1d23]">Selecione as NRs a inspecionar</h2>
+                <p className="text-xs text-gray-400 mb-4">Escolha uma ou mais normas regulamentadoras</p>
 
-              {nrChecklists.length === 0 ? (
-                <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
-              ) : (
-                <div className="space-y-2">
-                  {nrChecklists.map((nr) => {
-                    const selected = selectedNRIds.includes(nr.id);
-                    return (
-                      <button
-                        key={nr.id}
-                        onClick={() => toggleNR(nr.id)}
-                        className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${
-                          selected
-                            ? "border-[#FFD100] bg-[#fffbe6]"
-                            : "border-gray-200 bg-white hover:border-gray-300"
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <div className="font-bold text-sm text-[#1a1d23]">{nr.nrNumber}</div>
-                          <div className="text-xs text-gray-500 truncate">{nr.nrName}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">{nr.items.length} itens · {nr.category}</div>
-                        </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          selected ? "bg-[#FFD100] border-[#FFD100]" : "border-gray-300"
-                        }`}>
-                          {selected && <Check className="w-3.5 h-3.5 text-[#1a1d23] stroke-[3]" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                {nrChecklists.length === 0 ? (
+                  <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+                ) : (
+                  <div className="space-y-2">
+                    {nrChecklists.map((nr) => {
+                      const selected = selectedNRIds.includes(nr.id);
+                      return (
+                        <button
+                          key={nr.id}
+                          onClick={() => toggleNR(nr.id)}
+                          className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${
+                            selected
+                              ? "border-[#FFD100] bg-[#fffbe6]"
+                              : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="font-bold text-sm text-[#1a1d23]">{nr.nrNumber}</div>
+                            <div className="text-xs text-gray-500 truncate">{nr.nrName}</div>
+                            <div className="text-xs text-gray-400 mt-0.5">{nr.items.length} itens · {nr.category}</div>
+                          </div>
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                            selected ? "bg-[#FFD100] border-[#FFD100]" : "border-gray-300"
+                          }`}>
+                            {selected && <Check className="w-3.5 h-3.5 text-[#1a1d23] stroke-[3]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               onClick={handleConfirmNRs}
-              disabled={selectedNRIds.length === 0 || updateMutation.isPending}
+              disabled={(activeTemplateId ? !templateData : selectedNRIds.length === 0) || updateMutation.isPending}
               className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 ${
-                selectedNRIds.length > 0
+                (activeTemplateId ? !!templateData : selectedNRIds.length > 0)
                   ? "bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00]"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
               {updateMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <ClipboardList className="w-5 h-5" />}
-              {selectedNRIds.length === 0
-                ? "Selecione ao menos 1 NR"
-                : `Iniciar Checklist (${selectedNRIds.length} NR${selectedNRIds.length > 1 ? "s" : ""})`}
+              {activeTemplateId
+                ? "Iniciar Checklist"
+                : selectedNRIds.length === 0
+                  ? "Selecione ao menos 1 NR"
+                  : `Iniciar Checklist (${selectedNRIds.length} NR${selectedNRIds.length > 1 ? "s" : ""})`}
             </button>
           </>
         )}
@@ -515,9 +616,16 @@ export default function InspectionPage() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="font-bold text-sm text-[#1a1d23]">{formData.title || "Sem título"}</div>
-                  <div className="text-xs text-gray-400">{formData.inspectorName} · {selectedNRs.map(n => n.nrNumber).join(", ")}</div>
+                  <div className="text-xs text-gray-400">
+                    {formData.inspectorName} ·{" "}
+                    {activeTemplateId
+                      ? (templateData as any)?.name || "Template"
+                      : selectedNRs.map(n => n.nrNumber).join(", ")}
+                  </div>
                 </div>
-                <button onClick={() => setStep("select-nr")} className="text-xs text-blue-500 underline flex-shrink-0">Alterar NRs</button>
+                {!activeTemplateId && (
+                  <button onClick={() => setStep("select-nr")} className="text-xs text-blue-500 underline flex-shrink-0">Alterar NRs</button>
+                )}
               </div>
 
               {/* Progress */}
@@ -558,8 +666,8 @@ export default function InspectionPage() {
               </div>
             )}
 
-            {/* Seções por NR */}
-            {selectedNRs.map((nr) => {
+            {/* Seções por NR (inspeções NR padrão) */}
+            {!activeTemplateId && selectedNRs.map((nr) => {
               const nrItems = nr.items;
               const nrUnset = nrItems.filter((item) => !responses[item.id]?.response).length;
               const nrOk = nrItems.filter((item) => responses[item.id]?.response === "ok").length;
@@ -682,6 +790,160 @@ export default function InspectionPage() {
                                 <div>
                                   <label className="text-xs text-gray-600 block mb-1">Prioridade</label>
                                   <select value={itemResponse?.actionPlan?.priority || ""} onChange={(e) => handleActionPlan(item.id, "priority", e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]">
+                                    <option value="">Selecione...</option>
+                                    <option value="alta">Alta — Risco Grave/Iminente</option>
+                                    <option value="media">Média — Risco Moderado</option>
+                                    <option value="baixa">Baixa — Risco Menor</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Seções do Template */}
+            {activeTemplateId && templateSections.map((section) => {
+              const sectionConformityItems = section.items.filter((i) => i.responseType !== "text");
+              const sectionAnswered = section.items.filter((item) => {
+                const key = String(item.id);
+                if (item.responseType === "text") return !!responses[key]?.observation;
+                return !!responses[key]?.response;
+              }).length;
+              const sectionNc = section.items.filter((item) => responses[String(item.id)]?.response === "nc").length;
+              const sectionUnset = section.items.length - sectionAnswered;
+              const isCollapsed = collapsedSections[section.id];
+
+              return (
+                <div key={section.id} className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+                  <div className="bg-[#1a1d23] text-white px-4 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <button onClick={() => toggleSection(section.id)} className="flex items-center gap-2 flex-1 text-left min-w-0">
+                        <div className="min-w-0">
+                          <div className="font-bold text-sm flex items-center gap-2">
+                            <span className="w-1 h-4 bg-[#FFD100] rounded-full flex-shrink-0 block" />
+                            {section.name}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5 pl-3">
+                            {sectionAnswered} resp. · {sectionNc} NC · {sectionUnset} pendentes
+                          </div>
+                        </div>
+                        {isCollapsed ? <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                      </button>
+                      {sectionUnset > 0 && sectionConformityItems.length > 0 && (
+                        <div className="flex gap-1 flex-shrink-0">
+                          <button onClick={() => handleMarkSectionAll(section.id, "ok")} className="px-2 py-1 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600">✓</button>
+                          <button onClick={() => handleMarkSectionAll(section.id, "nc")} className="px-2 py-1 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600">✗</button>
+                          <button onClick={() => handleMarkSectionAll(section.id, "na")} className="px-2 py-1 rounded bg-gray-500 text-white text-xs font-bold hover:bg-gray-600">N/A</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isCollapsed && (
+                    <div>
+                      {section.items.map((item, itemIndex) => {
+                        const itemKey = String(item.id);
+                        const itemResponse = responses[itemKey];
+                        const currentResponse = itemResponse?.response;
+                        const obsAlways = item.obsRequired === "always";
+                        const obsIfNc = item.obsRequired === "if_nc" && currentResponse === "nc";
+                        const photoAlways = item.photoRequired === "always";
+                        const photoIfNc = item.photoRequired === "if_nc" && currentResponse === "nc";
+                        const showObs = item.responseType === "text" || obsAlways || obsIfNc;
+                        const showPhoto = photoAlways || photoIfNc;
+
+                        return (
+                          <div key={item.id} className="p-4 border-b border-gray-100 last:border-b-0">
+                            <p className="font-medium text-gray-800 leading-relaxed text-sm mb-3">
+                              {itemIndex + 1}. {item.text}
+                              {(obsAlways || item.responseType === "text") && (
+                                <span className="text-red-400 ml-1 text-xs">*</span>
+                              )}
+                            </p>
+
+                            {/* Botões de resposta: conformity */}
+                            {item.responseType === "conformity" && (
+                              <div className="flex gap-2 mb-3">
+                                <button onClick={() => handleResponse(itemKey, "ok")} className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "ok" ? "bg-green-500 text-white border-green-500" : "bg-white text-gray-700 border-gray-200 hover:border-green-300"}`}>✓ Conf.</button>
+                                <button onClick={() => handleResponse(itemKey, "nc")} className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "nc" ? "bg-red-500 text-white border-red-500" : "bg-white text-gray-700 border-gray-200 hover:border-red-300"}`}>✗ NC</button>
+                                <button onClick={() => handleResponse(itemKey, "na")} className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "na" ? "bg-gray-500 text-white border-gray-500" : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"}`}>N/A</button>
+                              </div>
+                            )}
+
+                            {/* Botões de resposta: boolean (Sim/Não) */}
+                            {item.responseType === "boolean" && (
+                              <div className="flex gap-2 mb-3">
+                                <button onClick={() => handleResponse(itemKey, "ok")} className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "ok" ? "bg-green-500 text-white border-green-500" : "bg-white text-gray-700 border-gray-200 hover:border-green-300"}`}>Sim</button>
+                                <button onClick={() => handleResponse(itemKey, "nc")} className={`flex-1 py-2.5 px-3 rounded-lg border-2 font-bold text-sm transition-all ${currentResponse === "nc" ? "bg-red-500 text-white border-red-500" : "bg-white text-gray-700 border-gray-200 hover:border-red-300"}`}>Não</button>
+                              </div>
+                            )}
+
+                            {/* Observação */}
+                            {(showObs || item.obsRequired === "never") && (
+                              <div className="pt-3 border-t border-dashed border-gray-200">
+                                <input
+                                  type="text"
+                                  placeholder={item.responseType === "text" ? "Resposta / texto obrigatório" : obsAlways ? "Observação (obrigatória)" : "Observação (opcional)"}
+                                  value={itemResponse?.observation || ""}
+                                  onChange={(e) => handleObservation(itemKey, e.target.value)}
+                                  className={`w-full px-3 py-2 border rounded-lg text-sm mb-2 focus:outline-none focus:border-[#FFD100] ${obsAlways && !itemResponse?.observation ? "border-orange-300 bg-orange-50" : "border-gray-200"}`}
+                                />
+                              </div>
+                            )}
+                            {!showObs && item.obsRequired !== "never" && item.responseType !== "text" && (
+                              <div className="pt-3 border-t border-dashed border-gray-200">
+                                <input
+                                  type="text"
+                                  placeholder="Observação (opcional)"
+                                  value={itemResponse?.observation || ""}
+                                  onChange={(e) => handleObservation(itemKey, e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-[#FFD100]"
+                                />
+                              </div>
+                            )}
+
+                            {/* Fotos */}
+                            {showPhoto && (
+                              <div className="flex items-center gap-2 flex-wrap mt-1">
+                                <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-all ${(itemResponse?.photos?.length || 0) > 0 ? "bg-blue-50 border-2 border-blue-500 text-blue-700" : "bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 hover:border-gray-400"}`}>
+                                  <Camera className="w-4 h-4" />
+                                  {(itemResponse?.photos?.length || 0) > 0 ? `${itemResponse!.photos.length} foto(s)` : "Adicionar Foto"}
+                                  <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => handlePhotoUpload(itemKey, e.target.files)} />
+                                </label>
+                                {itemResponse?.photos?.map((photo, photoIndex) => (
+                                  <div key={photoIndex} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                                    <img src={photo} alt="" className="w-full h-full object-cover" />
+                                    <button onClick={() => handleRemovePhoto(itemKey, photoIndex)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Plano de ação para NC */}
+                            {currentResponse === "nc" && (
+                              <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                                <div className="text-sm font-bold text-red-700 mb-2">⚠️ Plano de Ação</div>
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div>
+                                    <label className="text-xs text-gray-600 block mb-1">Responsável</label>
+                                    <input type="text" placeholder="Quem vai corrigir?" value={itemResponse?.actionPlan?.responsible || ""} onChange={(e) => handleActionPlan(itemKey, "responsible", e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]" />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-600 block mb-1">Prazo</label>
+                                    <input type="date" value={itemResponse?.actionPlan?.deadline || ""} onChange={(e) => handleActionPlan(itemKey, "deadline", e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-xs text-gray-600 block mb-1">Prioridade</label>
+                                  <select value={itemResponse?.actionPlan?.priority || ""} onChange={(e) => handleActionPlan(itemKey, "priority", e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-[#FFD100]">
                                     <option value="">Selecione...</option>
                                     <option value="alta">Alta — Risco Grave/Iminente</option>
                                     <option value="media">Média — Risco Moderado</option>
