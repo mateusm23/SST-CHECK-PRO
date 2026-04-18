@@ -84,21 +84,16 @@ const C = {
 
 // ── Styles ──
 const s = StyleSheet.create({
-  // Page — paddingTop reserva espaço pro mini-cabeçalho nas págs 2+
+  // Page — sem paddingTop, o mini-cabeçalho ocupa espaço no fluxo só nas págs 2+
   page: {
     backgroundColor: C.white,
     fontFamily: 'Helvetica',
     fontSize: 10,
-    paddingTop: 28,
     paddingBottom: 36,
   },
 
-  // ── Mini-cabeçalho (páginas 2+) ──
+  // ── Mini-cabeçalho (páginas 2+) — NO fluxo, sem position absolute ──
   miniHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     height: 28,
     backgroundColor: '#f8fafc',
     borderBottomWidth: 1,
@@ -480,7 +475,7 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   nrGroupHead: {
-    backgroundColor: C.dark,
+    backgroundColor: '#374151',
     paddingVertical: 8,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -658,15 +653,14 @@ export default function InspectionPDFDocument({
         {/* ── Mini-cabeçalho fixo nas páginas 2+ ── */}
         <View
           fixed
-          style={s.miniHeader}
           render={({ pageNumber }) =>
             pageNumber > 1 ? (
-              <>
-                <Text style={s.miniHeaderBrand}>SST Check Pro — sstcheckpro.com.br</Text>
+              <View style={s.miniHeader}>
+                <Text style={s.miniHeaderBrand}>SST Check Pro | sstcheckpro.com.br</Text>
                 <Text style={s.miniHeaderInspection}>
-                  Inspeção #{idStr}{inspData?.title ? ` · ${inspData.title}` : ''}
+                  Inspecao #{idStr}{inspData?.title ? ` - ${inspData.title}` : ''}
                 </Text>
-              </>
+              </View>
             ) : null
           }
         />
@@ -687,7 +681,7 @@ export default function InspectionPDFDocument({
             ) : (
               <>
                 <View style={s.logoBox}>
-                  <Text style={s.logoCheck}>✓</Text>
+                  <Text style={s.logoCheck}>V</Text>
                 </View>
                 <View style={s.brandBlock}>
                   {/* SST em branco, Check em amarelo, Pro em branco */}
@@ -817,7 +811,7 @@ export default function InspectionPDFDocument({
                   </View>
                   <View style={s.ncCardBody}>
                     <Text style={s.ncCardTitle}>{item.text}</Text>
-                    <Text style={s.ncCardNR}>{nrNumber} — {nrName}</Text>
+                    <Text style={s.ncCardNR}>{nrNumber} | {nrName}</Text>
                   </View>
                 </View>
 
@@ -851,7 +845,7 @@ export default function InspectionPDFDocument({
                         <View style={s.apItem}>
                           <Text style={s.apItemLbl}>Responsável</Text>
                           <Text style={s.apItemVal}>
-                            {data.actionPlan.responsible || '—'}
+                            {data.actionPlan.responsible || '-'}
                           </Text>
                         </View>
                         <View style={s.apItem}>
@@ -859,7 +853,7 @@ export default function InspectionPDFDocument({
                           <Text style={s.apItemVal}>
                             {data.actionPlan.deadline
                               ? formatDateShort(data.actionPlan.deadline)
-                              : '—'}
+                              : '-'}
                           </Text>
                         </View>
                         <View style={s.apItem}>
@@ -892,7 +886,7 @@ export default function InspectionPDFDocument({
                 <View style={s.nrGroupHead}>
                   <View style={s.nrAccent} />
                   <Text style={s.nrGroupName}>
-                    {nr.nrNumber} — {nr.nrName}
+                    {nr.nrNumber} | {nr.nrName}
                   </Text>
                 </View>
                 <View style={s.nrItemsBorder}>
@@ -948,7 +942,7 @@ export default function InspectionPDFDocument({
 
         {/* ── Rodapé fixo em todas as páginas ── */}
         <View style={s.pageFooter} fixed>
-          <Text style={s.pageFooterBrand}>SST Check Pro — sstcheckpro.com.br</Text>
+          <Text style={s.pageFooterBrand}>SST Check Pro | sstcheckpro.com.br</Text>
           <Text
             style={s.pageFooterPage}
             render={({ pageNumber, totalPages }) =>
@@ -983,7 +977,7 @@ function ChecklistItem({
       ? C.gray
       : '#e5e7eb';
   const dotSymbol =
-    status === 'ok' ? '✓' : status === 'nc' ? '✗' : status === 'na' ? '-' : '';
+    status === 'ok' ? 'C' : status === 'nc' ? 'X' : status === 'na' ? '-' : '';
   const statusText =
     status === 'ok' ? 'CONF' : status === 'nc' ? 'NC' : status === 'na' ? 'N/A' : '-';
   const statusColor =
