@@ -628,7 +628,48 @@ export default function InspectionPage() {
         {/* ── STEP 2: Checklist ── */}
         {step === "checklist" && (
           <>
-            {/* Resumo */}
+            {/* Dados da inspeção — editável inline para templates (auto-advance pula step 1) */}
+            {activeTemplateId && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+                <h2 className="font-bold text-sm text-[#1a1d23] flex items-center gap-2 mb-3">
+                  <ClipboardList className="w-4 h-4 text-[#FFD100]" />
+                  Dados da Inspeção
+                </h2>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Nome da Obra / Local *</label>
+                    <Input
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Ex: Edifício Aurora — Bloco A"
+                      className="border-2 border-gray-200 focus:border-[#FFD100] h-9 text-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Localização</label>
+                      <Input
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="Endereço"
+                        className="border-2 border-gray-200 focus:border-[#FFD100] h-9 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Responsável *</label>
+                      <Input
+                        value={formData.inspectorName}
+                        onChange={(e) => setFormData({ ...formData, inspectorName: e.target.value })}
+                        placeholder="Nome do técnico"
+                        className="border-2 border-gray-200 focus:border-[#FFD100] h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Resumo / progresso */}
             <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div>
