@@ -104,16 +104,29 @@ export default function InspectionPage() {
   });
   const canUploadLogo = subscription?.plan?.canUploadLogo ?? false;
 
-  const { data: templateData } = useQuery({
+  const { data: templateData, isError: templateLoadError } = useQuery({
     queryKey: ["/api/templates", activeTemplateId],
     enabled: !!activeTemplateId,
     queryFn: async () => {
       const res = await fetch(`/api/templates/${activeTemplateId}`, { credentials: "include" });
+      if (!res.ok) throw new Error(`${res.status}`);
       return res.json();
     },
   });
 
   const templateSections: TemplateSectionData[] = (templateData as any)?.sections || [];
+
+  // Auto-advance to checklist when template loads for fresh template inspections
+  useEffect(() => {
+    if (
+      step === "select-nr" &&
+      activeTemplateId &&
+      templateSections.length > 0 &&
+      Object.keys(responses).length === 0
+    ) {
+      setStep("checklist");
+    }
+  }, [step, activeTemplateId, templateSections.length, responses]);
 
   const selectedNRs = useMemo(
     () => nrChecklists.filter((nr) => selectedNRIds.includes(nr.id)),
@@ -533,7 +546,11 @@ export default function InspectionPage() {
                   <ClipboardList className="w-5 h-5 text-[#FFD100]" />
                   Template Selecionado
                 </h2>
-                {templateData ? (
+                {templateLoadError ? (
+                  <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200 text-sm text-red-600">
+                    Erro ao carregar template. Tente recarregar a página.
+                  </div>
+                ) : templateData ? (
                   <div className="mt-3 flex items-center gap-3 p-3 bg-[#1a1d23] rounded-xl">
                     <div className="w-10 h-10 bg-[#FFD100]/10 rounded-lg flex items-center justify-center flex-shrink-0">
                       <ClipboardList className="w-5 h-5 text-[#FFD100]" />
@@ -591,7 +608,7 @@ export default function InspectionPage() {
 
             <button
               onClick={handleConfirmNRs}
-              disabled={(activeTemplateId ? !templateData : selectedNRIds.length === 0) || updateMutation.isPending}
+              disabled={(activeTemplateId ? (!templateData || templateLoadError) : selectedNRIds.length === 0) || updateMutation.isPending}
               className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 ${
                 (activeTemplateId ? !!templateData : selectedNRIds.length > 0)
                   ? "bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00]"
@@ -808,6 +825,11 @@ export default function InspectionPage() {
             })}
 
             {/* Seções do Template */}
+            {activeTemplateId && templateSections.length === 0 && !templateLoadError && (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            )}
             {activeTemplateId && templateSections.map((section) => {
               const sectionConformityItems = section.items.filter((i) => i.responseType !== "text");
               const sectionAnswered = section.items.filter((item) => {

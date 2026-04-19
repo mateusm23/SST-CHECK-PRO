@@ -14,6 +14,7 @@ import {
   Layers,
   AlertTriangle,
   X,
+  ClipboardList,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,6 +51,23 @@ export default function TemplatesPage() {
     },
     onError: () => {
       toast({ title: "Erro ao criar template", variant: "destructive" });
+    },
+  });
+
+  const newInspectionFromTemplateMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      const res = await apiRequest("POST", "/api/inspections", {
+        title: "Nova Inspeção",
+        checklistData: { templateId, responses: {} },
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+      setLocation(`/inspection/${data.id}`);
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar inspeção", variant: "destructive" });
     },
   });
 
@@ -183,7 +201,17 @@ export default function TemplatesPage() {
                 </Link>
 
                 {/* Actions bar */}
-                <div className="bg-gray-50 border-t border-gray-100 px-4 py-2 flex justify-between items-center">
+                <div className="bg-gray-50 border-t border-gray-100 px-4 py-2 flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-[#FFD100] text-[#1a1d23] hover:bg-[#E6BC00] font-bold gap-1.5 text-xs"
+                    onClick={() => newInspectionFromTemplateMutation.mutate(template.id)}
+                    disabled={newInspectionFromTemplateMutation.isPending}
+                  >
+                    <ClipboardList className="w-3.5 h-3.5" />
+                    Nova Inspeção
+                  </Button>
+                  <div className="flex-1" />
                   <Link href={`/templates/${template.id}/edit`}>
                     <Button
                       size="sm"
